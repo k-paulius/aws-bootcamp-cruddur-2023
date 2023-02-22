@@ -45,3 +45,65 @@ aws organizations create-account --email email@email.com --account-name log-arch
 aws organizations list-accounts
 aws organizations move-account --account-id 222222222222 --source-parent-id r-xxxx --destination-parent-id ou-xxxx-yyyy
 ```
+
+### SCPs
+
+#### Deny Actions as a Root User
+
+```json
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Sid": "DenyRootUserActions",
+            "Effect": "Deny",
+            "Action": "*",
+            "Resource": "*",
+            "Condition": {
+                "StringLike": {
+                    "aws:PrincipalArn": "arn:aws:iam::*:root"
+                }
+            }
+        }
+    ]
+}
+```
+
+#### Deny Ability to Leave Organization
+
+```json
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Sid": "DenyLeaveOrganization",
+            "Effect": "Deny",
+            "Action": "organizations:LeaveOrganization",
+            "Resource": "*"
+        }
+    ]
+}
+```
+
+#### Restrict Region to us-east-1
+
+```json
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Sid": "RestrictRegion",
+            "Effect": "Deny",
+            "Action": "*",
+            "Resource": "*",
+            "Condition": {
+                "StringNotEquals": {
+                    "aws:RequestedRegion": [
+                        "us-east-1"
+                    ]
+                }
+            }
+        }
+    ]
+}
+```

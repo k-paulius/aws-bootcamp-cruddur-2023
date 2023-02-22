@@ -27,3 +27,21 @@ flowchart TD
     class infra,sandbox,security,workloads,infra_prod,security_prod,workloads_prod styleOU;
     class management,log-archive-prod,security-tooling-prod,sandbox-01,cruddur-prod styleAccnt;
 ```
+
+### AWS CLI Commands for Setting up Organization
+
+```bash
+# Create organization
+aws organizations create-organization
+
+# Get Root Id
+aws organizations list-roots --query Roots[0].Id --output text
+# Create OUs
+aws organizations create-organizational-unit --parent-id r-xxxx --name Security
+aws organizations create-organizational-unit --parent-id ou-xxxx-yyyy --name Prod
+# Create accounts
+aws organizations create-account --email email@email.com --account-name log-archive-prod
+# Move accounts to proper OU
+aws organizations list-accounts
+aws organizations move-account --account-id 222222222222 --source-parent-id r-xxxx --destination-parent-id ou-xxxx-yyyy
+```

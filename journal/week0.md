@@ -107,3 +107,21 @@ aws organizations move-account --account-id 222222222222 --source-parent-id r-xx
     ]
 }
 ```
+
+#### Deny Ability to Delete Organization Trail KMS Key
+
+```json
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Effect": "Deny",
+            "Action": [
+                "kms:ScheduleKeyDeletion",
+                "kms:DisableKey"
+            ],
+            "Resource": "arn:aws:kms:us-east-1:123456789012:key/111-2222-3333-4444"
+        }
+    ]
+}
+```

@@ -1,0 +1,26 @@
+{
+    "AlarmName": "Billing Alert",
+    "AlarmDescription": "",
+    "ActionsEnabled": true,
+    "OKActions": [],
+    "AlarmActions": [
+        "arn:aws:sns:us-east-1:123456789012:billing_alarms_topic"
+    ],
+    "InsufficientDataActions": [],
+    "MetricName": "EstimatedCharges",
+    "Namespace": "AWS/Billing",
+    "Statistic": "Maximum",
+    "Dimensions": [
+        {
+            "Name": "Currency",
+            "Value": "USD"
+        }
+    ],
+    "Period": 21600,
+    "Unit": "Seconds",
+    "EvaluationPeriods": 1,
+    "DatapointsToAlarm": 1,
+    "Threshold": 10.0,
+    "ComparisonOperator": "GreaterThanThreshold",
+    "TreatMissingData": "missing"
+}

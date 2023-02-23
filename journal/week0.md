@@ -20,7 +20,22 @@ aws budgets create-budget \
 aws budgets describe-budgets --account-id 123456789012
 ```
 
+### AWS CloudWatch Billing Alert
 
+```sh
+# Create SNS topic
+aws sns create-topic --name billing_alarms_topic
+# Subscribe to SNS topic
+aws sns subscribe \
+    --topic-arn "arn:aws:sns:us-east-1:123456789012:billing_alarms_topic" \
+    --protocol email \
+    --notification-endpoint "changeme@email.com"
+
+# Generate JSON skeleton for CloudWatch alarm
+aws cloudwatch put-metric-alarm --generate-cli-skeleton
+# Create CloudWatch alarm
+aws cloudwatch put-metric-alarm --cli-input-json file://cloudwatch-alarm.json
+```
 
 ## Homework Challenges
 

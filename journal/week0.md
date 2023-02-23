@@ -162,3 +162,156 @@ aws organizations move-account --account-id 222222222222 --source-parent-id r-xx
     ]
 }
 ```
+
+### AWS Organization CloudTrail Setup
+
+Notes:
+- `security-tooling-prod` account id = 311111111111
+- `management` account id = 611111111111
+
+#### Create KMS key in security-tooling-prod account
+
+```sh
+# Create key
+aws kms create-key --description "Key to encrypt CloudTrail organization trail log files." --key-usage ENCRYPT_DECRYPT --key-spec SYMMETRIC_DEFAULT --origin AWS_KMS --no-multi-region
+# Create key alias
+aws kms create-alias --target-key-id 1111-2222-3333-4444 --alias-name "alias/OrganizationTrailKey"
+# Enable key rotation
+aws kms enable-key-rotation --key-id 1111-2222-3333-4444
+# Set KMS key policy
+aws kms put-key-policy --key-id 1111-2222-3333-4444 --policy-name default --policy file://kmsKeyPolicy.json --bypass-policy-lockout-safety-check
+```
+
+KMS key policy
+```json
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Sid": "Enable IAM User Permissions",
+            "Effect": "Allow",
+            "Principal": {
+                "AWS": "arn:aws:iam::311111111111:root"
+            },
+            "Action": "kms:*",
+            "Resource": "*"
+        },
+        {
+            "Sid": "Allow CloudTrail to encrypt logs",
+            "Effect": "Allow",
+            "Principal": {
+                "Service": "cloudtrail.amazonaws.com"
+            },
+            "Action": "kms:GenerateDataKey*",
+            "Resource": "arn:aws:kms:us-east-1:311111111111:key/1111-2222-3333-4444",
+            "Condition": {
+                "StringLike": {
+                    "kms:EncryptionContext:aws:cloudtrail:arn": "arn:aws:cloudtrail:*:611111111111:trail/*"
+                },
+                "StringEquals": {
+                    "aws:SourceArn": "arn:aws:cloudtrail:us-east-1:611111111111:trail/OrganizationTrail"
+                }
+            }
+        },
+        {
+            "Sid": "Allow CloudTrail to describe key",
+            "Effect": "Allow",
+            "Principal": {
+                "Service": "cloudtrail.amazonaws.com"
+            },
+            "Action": "kms:DescribeKey",
+            "Resource": "arn:aws:kms:us-east-1:311111111111:key/1111-2222-3333-4444",
+            "Condition": {
+                "StringEquals": {
+                    "aws:SourceArn": "arn:aws:cloudtrail:us-east-1:611111111111:trail/OrganizationTrail"
+                }
+            }
+        }
+    ]
+}
+```
+
+#### Create S3 bucket in log-archive-prod account
+
+```bash
+aws s3api create-bucket --bucket aws-org-cloudtrail-logs-n2cnxqb3otscixrv
+# Enable block public access
+aws s3api put-public-access-block --bucket aws-org-cloudtrail-logs-n2cnxqb3otscixrv --public-access-block-configuration BlockPublicAcls=true,IgnorePublicAcls=true,
+BlockPublicPolicy=true,RestrictPublicBuckets=true
+# Enable versioning
+aws s3api put-bucket-versioning --bucket aws-org-cloudtrail-logs-n2cnxqb3otscixrv --versioning-configuration MFADelete=Disabled,Status=Enabled
+# Disable ACL
+aws s3api put-bucket-ownership-controls --bucket aws-org-cloudtrail-logs-n2cnxqb3otscixrv --ownership-controls Rules=[{ObjectOwnership=BucketOwnerEnforced}]
+# Set bucket policy
+aws s3api put-bucket-policy --bucket aws-org-cloudtrail-logs-n2cnxqb3otscixrv --policy file://s3BucketPolicy.json
+```
+
+S3 bucket policy
+```json
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Sid": "AWSCloudTrailAclCheck20150319",
+            "Effect": "Allow",
+            "Principal": {
+                "Service": "cloudtrail.amazonaws.com"
+            },
+            "Action": "s3:GetBucketAcl",
+            "Resource": "arn:aws:s3:::aws-org-cloudtrail-logs-n2cnxqb3otscixrv",
+            "Condition": {
+                "StringEquals": {
+                    "AWS:SourceArn": "arn:aws:cloudtrail:us-east-1:611111111111:trail/OrganizationTrail"
+                }
+            }
+        },
+        {
+            "Sid": "AWSCloudTrailWrite20150319",
+            "Effect": "Allow",
+            "Principal": {
+                "Service": "cloudtrail.amazonaws.com"
+            },
+            "Action": "s3:PutObject",
+            "Resource": "arn:aws:s3:::aws-org-cloudtrail-logs-n2cnxqb3otscixrv/AWSLogs/611111111111/*",
+            "Condition": {
+                "StringEquals": {
+                    "AWS:SourceArn": "arn:aws:cloudtrail:us-east-1:611111111111:trail/OrganizationTrail",
+                    "s3:x-amz-acl": "bucket-owner-full-control"
+                }
+            }
+        },
+        {
+            "Sid": "AWSCloudTrailWrite20150319",
+            "Effect": "Allow",
+            "Principal": {
+                "Service": "cloudtrail.amazonaws.com"
+            },
+            "Action": "s3:PutObject",
+            "Resource": "arn:aws:s3:::aws-org-cloudtrail-logs-n2cnxqb3otscixrv/AWSLogs/o-rkes9q3ii9/*",
+            "Condition": {
+                "StringEquals": {
+                    "AWS:SourceArn": "arn:aws:cloudtrail:us-east-1:611111111111:trail/OrganizationTrail",
+                    "s3:x-amz-acl": "bucket-owner-full-control"
+                }
+            }
+        }
+    ]
+}
+```
+
+#### Create Organization CloudTrail
+
+```bash
+# Enable organization CloudTrail service access
+aws organizations enable-aws-service-access --service-principal cloudtrail.amazonaws.com
+# Create trail
+aws cloudtrail create-trail --name OrganizationTrail --s3-bucket-name aws-org-cloudtrail-logs-n2cnxqb3otscixrv --include-global-service-events --is-multi-region-trail --enable-log-file-validation --kms-key-id arn:aws:kms:us-east-1:311111111111:alias/OrganizationTrailKey --is-organization-trail
+# Start logging
+aws cloudtrail start-logging --name OrganizationTrail
+```
+- check status
+```bash
+aws cloudtrail get-trail --name OrganizationTrail
+# check LatestNotificationAttemptSucceeded
+aws cloudtrail get-trail-status --name OrganizationTrail
+```

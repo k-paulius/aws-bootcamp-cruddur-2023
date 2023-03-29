@@ -9,6 +9,12 @@ tasks:
       sudo ./aws/install
       rm -f awscliv2.zip
       cd $THEIA_WORKSPACE_ROOT
+  - name: git
+    init: |
+      git config --global gpg.format ssh
+      git config --global user.signingkey "$SSH_SIGNING_KEY"
+      git config --global commit.gpgsign true
+    command: bash
 vscode:
   extensions:
     - 42Crunch.vscode-openapi

@@ -1,11 +1,25 @@
-FROM python:3.10-slim-buster
+# pin base image to a minor version for stability
+FROM python:3.10-slim-bullseye
 
-WORKDIR /backend-flask
+# create user "python"
+RUN set -eux; \
+	groupadd -r python -g 999; \
+    useradd -r -g python -u 999 --home-dir=/usr/app --shell=/bin/bash python; \
+	mkdir -p /usr/app; \
+	chown -R python:python /usr/app
 
-COPY requirements.txt requirements.txt
+# set working directory
+WORKDIR /usr/app
+
+# copy requirements.txt separate from the source code
+# this separates things into different layers and helps with layer caching
+COPY requirements.txt .
 RUN pip3 install -r requirements.txt
 
-COPY . .
+# use non-root user
+USER python
+
+COPY --chown=python:python . .
 
 ENV FLASK_ENV=development
 

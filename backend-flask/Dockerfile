@@ -8,6 +8,11 @@ RUN set -eux; \
 	mkdir -p /usr/app; \
 	chown -R python:python /usr/app
 
+# install extra packages
+RUN apt-get update; \
+    apt-get install -y --no-install-recommends curl; \
+	rm -rf /var/lib/apt/lists/*
+
 # set working directory
 WORKDIR /usr/app
 
@@ -25,3 +30,4 @@ ENV FLASK_ENV=development
 
 EXPOSE ${PORT}
 CMD [ "python3", "-m" , "flask", "run", "--host=0.0.0.0", "--port=4567"]
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 CMD curl -f http://localhost:4567/health || exit 1

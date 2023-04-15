@@ -103,3 +103,29 @@ Unfortunately, Win32-OpenSSH, the native OpenSSH implementation for Windows, doe
 #### Git Commit Signing on Gitpod
 
 Gitpod does not support "native" Git commit signing when using their browser interface, but we can use `ssh-agent` forwarding method with desktop clients such as VSCode as well as direct access via SSH. Follow steps from this blog post to set it up: [Signing Commits on Gitpod with 1Password | Gitpod](https://www.gitpod.io/blog/signing-git-commits-on-gitpod-with-1-password)
+
+### Docker Container Best Practices
+
+- [Best practices for containerizing Python applications with Docker | Snyk](https://snyk.io/blog/best-practices-containerizing-python-docker/)
+- [10 best practices to containerize Node.js web applications with Docker | Snyk Blog | Snyk](https://snyk.io/blog/10-best-practices-to-containerize-nodejs-web-applications-with-docker/)
+- [Writing a Good Node.js Dockerfile | DevOps Directive | Sid Palas](https://devopsdirective.com/posts/2023/03/writing-a-nodejs-dockerfile/)
+
+### Container Image Vuln Scanning
+
+#### Trivy
+
+```bash
+# Scan a container image
+trivy image frontend-react-js
+```
+
+#### Snyk
+- [Install or update the Snyk CLI | Snyk User Docs](https://docs.snyk.io/snyk-cli/install-the-snyk-cli)
+
+```bash
+# Authenticate the CLI with your account
+snyk auth [<API_TOKEN>]
+
+# Scan container
+snyk container test frontend-react-js --file=path/to/Dockerfile
+```

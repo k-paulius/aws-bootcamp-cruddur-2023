@@ -1,7 +1,7 @@
 import './ProfileInfo.css';
 import {ReactComponent as ElipsesIcon} from './svg/elipses.svg';
 import React from "react";
-import Auth from 'aws-amplify';
+import { Auth } from 'aws-amplify';
 
 export default function ProfileInfo(props) {
   const [popped, setPopped] = React.useState(false);

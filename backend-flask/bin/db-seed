@@ -1,0 +1,13 @@
+#! /usr/bin/bash
+
+SEED_PATH="$(realpath .)/db/seed.sql"
+echo $SEED_PATH
+
+if [ "$1" = "prod" ]; then
+  echo "!! Production Mode !!"
+  CONN_URL=$PROD_CONNECTION_URL
+else
+  CONN_URL=$CONNECTION_URL
+fi
+
+psql $CONN_URL cruddur < $SEED_PATH

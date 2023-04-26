@@ -1,0 +1,16 @@
+#! /usr/bin/bash
+
+if [ "$1" = "prod" ]; then
+  echo "!! Production Mode !!"
+  CONN_URL=$PROD_CONNECTION_URL
+else
+  CONN_URL=$CONNECTION_URL
+fi
+
+psql $(sed 's/\/cruddur//g' <<< "$CONN_URL") -c "SELECT pid AS process_id, \
+       usename AS user,  \
+       datname AS db, \
+       client_addr, \
+       application_name AS app,\
+       state \
+FROM pg_stat_activity;"

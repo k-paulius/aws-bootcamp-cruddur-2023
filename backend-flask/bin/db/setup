@@ -1,0 +1,9 @@
+#! /usr/bin/bash
+-e # stop if it fails at any point
+
+BIN_PATH="$(realpath .)/bin/db"
+
+source "$BIN_PATH/drop"
+source "$BIN_PATH/create"
+source "$BIN_PATH/schema-load"
+source "$BIN_PATH/seed"

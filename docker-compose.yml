@@ -15,7 +15,8 @@ services:
       ROLLBAR_ACCESS_TOKEN: "${ROLLBAR_ACCESS_TOKEN}"
       AWS_COGNITO_USER_POOL_ID: "us-east-1_fqSpzuhBC"
       AWS_COGNITO_USER_POOL_CLIENT_ID: "79kofvlfu00dlalaic46g9i966"
-      CONNECTION_URL: "postgresql://postgres:password@db:5432/cruddur"
+      #CONNECTION_URL: "postgresql://postgres:password@db:5432/cruddur"
+      CONNECTION_URL: "${PROD_CONNECTION_URL}"
     build: ./backend-flask
     ports:
       - "4567:4567"
@@ -44,16 +45,16 @@ services:
       - "xray -o -b xray-daemon:2000"
     ports:
       - 2000:2000/udp
-  db:
-    image: postgres:13-alpine
-    restart: always
-    environment:
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=password
-    ports:
-      - '5432:5432'
-    volumes: 
-      - db:/var/lib/postgresql/data
+  # db:
+  #   image: postgres:13-alpine
+  #   restart: always
+  #   environment:
+  #     - POSTGRES_USER=postgres
+  #     - POSTGRES_PASSWORD=password
+  #   ports:
+  #     - '5432:5432'
+  #   volumes: 
+  #     - db:/var/lib/postgresql/data
   # dynamodb-local:
   #   # https://stackoverflow.com/questions/67533058/persist-local-dynamodb-data-in-volumes-lack-permission-unable-to-open-databa
   #   # We needed to add user:root to get this working.

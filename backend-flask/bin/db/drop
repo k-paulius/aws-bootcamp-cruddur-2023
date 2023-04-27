@@ -1,3 +1,3 @@
 #! /usr/bin/bash
 
-psql $(sed 's/\/cruddur//g' <<< "$CONNECTION_URL") -c "DROP DATABASE cruddur;"
+psql $(sed 's/\/cruddur//g' <<< "$CONNECTION_URL") -c "DROP DATABASE IF EXISTS cruddur;"

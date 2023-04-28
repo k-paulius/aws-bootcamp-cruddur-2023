@@ -1,14 +1,14 @@
 -- this file was manually created
 INSERT INTO public.users (display_name, handle, email, cognito_user_id)
 VALUES
-  ('Firsty Lasty The First',  'firsty_lasty_01', 'firsty_lasty_01@cruddur.com', 'MOCK'),
-  ('Firsty Lasty The Second', 'firsty_lasty_02', 'firsty_lasty_02@cruddur.com', 'MOCK'),
-  ('Firsty Lasty The Third',  'firsty_lasty_03', 'firsty_lasty_03@cruddur.com', 'MOCK');
+  ('Walter Boggis',   'walter_boggis',   'boggis@cruddur.me', '9cd83186-bb18-4f73-a577-21f73e1a7299'),
+  ('Nathaniel Bunce', 'nathaniel_bunce', 'bunce@cruddur.me',  '5d5b9024-2c6f-4002-8e8f-ac61607c3c6a'),
+  ('Franklin Bean',   'franklin_bean',   'bean@cruddur.me',   '36566fc0-2ae3-4e9c-b340-08784f00d4cb');
 
 INSERT INTO public.activities (user_uuid, message, expires_at)
 VALUES
   (
-    (SELECT uuid from public.users WHERE users.handle = 'firsty_lasty_01' LIMIT 1),
+    (SELECT uuid from public.users WHERE users.handle = 'walter_boggis' LIMIT 1),
     'This was imported as seed data!',
     current_timestamp + interval '10 day'
   )

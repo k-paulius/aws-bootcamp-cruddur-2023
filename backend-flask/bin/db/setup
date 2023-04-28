@@ -1,9 +1,10 @@
 #! /usr/bin/bash
 set -e # stop if it fails at any point
 
-BIN_PATH="$(realpath .)/bin/db"
+BIN_PATH="$(realpath .)/bin"
 
-source "$BIN_PATH/drop"
-source "$BIN_PATH/create"
-source "$BIN_PATH/schema-load"
-source "$BIN_PATH/seed"
+source "$BIN_PATH/db/drop"
+source "$BIN_PATH/db/create"
+source "$BIN_PATH/db/schema-load"
+source "$BIN_PATH/db/seed"
+"$BIN_PATH/db/update_cognito_user_ids"

@@ -111,11 +111,6 @@ def init_rollbar():
     # send exceptions from `app` to rollbar, using flask's signal system.
     got_request_exception.connect(rollbar.contrib.flask.report_exception, app)    
 
-@app.route('/rollbar/test')
-def rollbar_test():
-    rollbar.report_message('Hello World!', 'warning')
-    return "Hello World!"
-
 @app.route("/api/message_groups", methods=['GET'])
 def data_message_groups():
   access_token = extract_access_token(request.headers)
@@ -275,9 +270,9 @@ def data_activities_reply(activity_uuid):
     return model['data'], 200
   return
 
-@app.route('/health', methods=['GET'])
-def health():
-  return "Healthy: OK"
+@app.route('/api/health-check')
+def health_check():
+  return {'success': True}, 200
 
 @app.route("/api/users/@<string:handle>/short", methods=['GET'])
 def data_users_short(handle):

@@ -32,6 +32,13 @@
       }
     ]
   },
+  "loadBalancers": [
+    {
+        "targetGroupArn": "arn:aws:elasticloadbalancing:us-east-1:123456789012:targetgroup/cruddur-backend-flask-tg/6751ff062d76e3c2",
+        "containerName": "backend-flask",
+        "containerPort": 4567
+    }
+  ],
   "propagateTags": "SERVICE",
   "serviceName": "backend-flask-svc",
   "taskDefinition": "backend-flask"

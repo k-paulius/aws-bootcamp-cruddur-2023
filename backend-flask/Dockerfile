@@ -1,5 +1,5 @@
 # pin base image to a minor version for stability
-FROM python:3.10-slim-bullseye
+FROM 123456789012.dkr.ecr.us-east-1.amazonaws.com/cruddur-python:3.10-slim-bullseye
 
 # create user "python"
 RUN set -eux; \
@@ -26,9 +26,9 @@ USER python
 
 COPY --chown=python:python . .
 
-ENV FLASK_ENV=development
+ENV FLASK_DEBUG=1
 ENV PORT=4567
 
 EXPOSE ${PORT}
 CMD [ "python3", "-m" , "flask", "run", "--host=0.0.0.0", "--port=4567"]
-HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 CMD curl -f http://localhost:4567/health-check || exit 1
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 CMD curl -f http://localhost:4567/api/health-check || exit 1

@@ -11,6 +11,14 @@ tasks:
     command: |
       sudo ./aws/install
       cd $THEIA_WORKSPACE_ROOT
+  - name: aws-ssm
+    before: |
+      cd /workspace
+    init: |
+      curl "https://s3.amazonaws.com/session-manager-downloads/plugin/latest/ubuntu_64bit/session-manager-plugin.deb" -o "session-manager-plugin.deb"
+    command: |
+      sudo dpkg -i session-manager-plugin.deb
+      cd $THEIA_WORKSPACE_ROOT
   - name: postgres
     command: |
       curl -fsSL https://www.postgresql.org/media/keys/ACCC4CF8.asc|sudo gpg --dearmor -o /etc/apt/trusted.gpg.d/postgresql.gpg

@@ -1,0 +1,23 @@
+#
+# Build Image
+#
+FROM node:latest AS build
+
+WORKDIR /usr/src/app
+COPY package*.json ./
+RUN npm install
+
+COPY . .
+RUN npm run build
+
+#
+# Production Image
+#
+# pin base image to a minor version for stability
+FROM nginxinc/nginx-unprivileged:1.24-bullseye
+
+# Use COPY --link to avoid breaking cache if we change the second stage base image
+COPY --link nginx.conf /etc/nginx/nginx.conf
+COPY --link --from=build usr/src/app/build/ /usr/share/nginx/html
+
+EXPOSE 3000

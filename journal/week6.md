@@ -165,10 +165,17 @@ aws ec2 authorize-security-group-ingress \
   --cidr "$(curl ifconfig.me)/32" 
 # allow traffic to backend-flask on port 4567 from ALB
 aws ec2 authorize-security-group-ingress \
-  --group-id $CRUD_SERVICE_SG \
+  --group-id $(aws ec2 describe-security-groups --group-names crud-svc-sg --query 'SecurityGroups[0].GroupId' --output text) \
   --protocol tcp \
   --port 4567 \
-  --source-group $CRUD_ALB_SG
+  --source-group $(aws ec2 describe-security-groups --group-names crud-alb-sg --query 'SecurityGroups[0].GroupId' --output text)
+# allow traffic to frontend-react-js on port 3000 from ALB
+aws ec2 authorize-security-group-ingress \
+  --group-id $(aws ec2 describe-security-groups --group-names crud-svc-sg --query 'SecurityGroups[0].GroupId' --output text) \
+  --protocol tcp \
+  --port 3000 \
+  --source-group $(aws ec2 describe-security-groups --group-names crud-alb-sg --query 'SecurityGroups[0].GroupId' --output text)
+
 
 # create target group for backend app
 aws elbv2 create-target-group \

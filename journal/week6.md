@@ -41,7 +41,15 @@ aws ecr create-repository \
   --image-tag-mutability MUTABLE
 # build and push backend app to ECR
 export ECR_FRONTEND_REACT_JS_URL="$AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/frontend-react-js"
-docker build -t frontend-react-js -f frontend-react-js/Dockerfile.prod ./frontend-react-js
+docker build \
+  --build-arg REACT_APP_BACKEND_URL=$(aws ssm get-parameter --name "/cruddur/frontend-react-js/REACT_APP_BACKEND_URL" --query 'Parameter.Value' --output text) \
+  --build-arg REACT_APP_AWS_USER_POOLS_ID=$(aws ssm get-parameter --name "/cruddur/frontend-react-js/REACT_APP_AWS_USER_POOLS_ID" --query 'Parameter.Value' --output text) \
+  --build-arg REACT_APP_CLIENT_ID=$(aws ssm get-parameter --name "/cruddur/frontend-react-js/REACT_APP_CLIENT_ID" --query 'Parameter.Value' --output text) \
+  --build-arg REACT_APP_AWS_PROJECT_REGION="us-east-1" \
+  --build-arg REACT_APP_AWS_COGNITO_REGION="us-east-1" \
+  -t frontend-react-js \
+  -f frontend-react-js/Dockerfile.prod \
+  ./frontend-react-js
 docker tag frontend-react-js:latest $ECR_FRONTEND_REACT_JS_URL:latest
 docker push $ECR_FRONTEND_REACT_JS_URL:latest
 
@@ -60,8 +68,8 @@ aws ssm put-parameter --type "SecureString" --name "/cruddur/backend-flask/AWS_C
 aws ssm put-parameter --type "String" --name "/cruddur/backend-flask/FRONTEND_URL" --value "https://cruddur.org"
 aws ssm put-parameter --type "String" --name "/cruddur/backend-flask/BACKEND_URL" --value "https://api.cruddur.org"
 # frontend app
-aws ssm put-parameter --type "SecureString" --name "/cruddur/frontend-react-js/REACT_APP_AWS_USER_POOLS_ID" --value "us-east-1_fqSpzuhBC"
-aws ssm put-parameter --type "SecureString" --name "/cruddur/frontend-react-js/REACT_APP_CLIENT_ID" --value "79kofvlfu00dlalaic46g9i966"
+aws ssm put-parameter --type "String" --name "/cruddur/frontend-react-js/REACT_APP_AWS_USER_POOLS_ID" --value "us-east-1_fqSpzuhBC"
+aws ssm put-parameter --type "String" --name "/cruddur/frontend-react-js/REACT_APP_CLIENT_ID" --value "79kofvlfu00dlalaic46g9i966"
 aws ssm put-parameter --type "String" --name "/cruddur/frontend-react-js/REACT_APP_BACKEND_URL" --value "https://api.cruddur.org"
 
 

@@ -38,18 +38,7 @@
             "awslogs-region": "us-east-1",
             "awslogs-stream-prefix": "frontend-react-js"
         }
-      },
-
-      "environment": [
-        {"name": "REACT_APP_AWS_PROJECT_REGION", "value": "us-east-1"},
-        {"name": "REACT_APP_AWS_COGNITO_REGION", "value": "us-east-1"}
-      ],
-      "secrets": [
-        {"name": "REACT_APP_BACKEND_URL",        "valueFrom": "arn:aws:ssm:us-east-1:123456789012:parameter/cruddur/frontend-react-js/REACT_APP_BACKEND_URL"},
-        {"name": "REACT_APP_AWS_USER_POOLS_ID",  "valueFrom": "arn:aws:ssm:us-east-1:123456789012:parameter/cruddur/frontend-react-js/REACT_APP_AWS_USER_POOLS_ID"},
-        {"name": "REACT_APP_CLIENT_ID",          "valueFrom": "arn:aws:ssm:us-east-1:123456789012:parameter/cruddur/frontend-react-js/REACT_APP_CLIENT_ID"}
-      ]
-
+      }
     }
   ]
 }

@@ -49,7 +49,7 @@ docker push $ECR_FRONTEND_REACT_JS_URL:latest
 #
 # Create SSM Parameters
 #
-# frontend app
+# backend app
 aws ssm put-parameter --type "SecureString" --name "/cruddur/backend-flask/AWS_ACCESS_KEY_ID" --value $AWS_ACCESS_KEY_ID
 aws ssm put-parameter --type "SecureString" --name "/cruddur/backend-flask/AWS_SECRET_ACCESS_KEY" --value $AWS_SECRET_ACCESS_KEY
 aws ssm put-parameter --type "SecureString" --name "/cruddur/backend-flask/CONNECTION_URL" --value $PROD_CONNECTION_URL
@@ -57,9 +57,12 @@ aws ssm put-parameter --type "SecureString" --name "/cruddur/backend-flask/ROLLB
 aws ssm put-parameter --type "SecureString" --name "/cruddur/backend-flask/OTEL_EXPORTER_OTLP_HEADERS" --value "x-honeycomb-team=$HONEYCOMB_API_KEY"
 aws ssm put-parameter --type "SecureString" --name "/cruddur/backend-flask/AWS_COGNITO_USER_POOL_ID" --value "us-east-1_abc"
 aws ssm put-parameter --type "SecureString" --name "/cruddur/backend-flask/AWS_COGNITO_USER_POOL_CLIENT_ID" --value "abc1234"
-# backend app
+aws ssm put-parameter --type "String" --name "/cruddur/backend-flask/FRONTEND_URL" --value "https://cruddur.org"
+aws ssm put-parameter --type "String" --name "/cruddur/backend-flask/BACKEND_URL" --value "https://api.cruddur.org"
+# frontend app
 aws ssm put-parameter --type "SecureString" --name "/cruddur/frontend-react-js/REACT_APP_AWS_USER_POOLS_ID" --value "us-east-1_fqSpzuhBC"
 aws ssm put-parameter --type "SecureString" --name "/cruddur/frontend-react-js/REACT_APP_CLIENT_ID" --value "79kofvlfu00dlalaic46g9i966"
+aws ssm put-parameter --type "String" --name "/cruddur/frontend-react-js/REACT_APP_BACKEND_URL" --value "https://api.cruddur.org"
 
 
 #

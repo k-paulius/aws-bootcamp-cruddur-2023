@@ -40,13 +40,13 @@
         }
       },
       "environment": [
-        {"name": "FRONTEND_URL",                "value": "*"},
-        {"name": "BACKEND_URL",                 "value": "*"},
         {"name": "OTEL_SERVICE_NAME",           "value": "backend-flask"},
         {"name": "OTEL_EXPORTER_OTLP_ENDPOINT", "value": "https://api.honeycomb.io"},
         {"name": "AWS_DEFAULT_REGION",          "value": "us-east-1"}
       ],
       "secrets": [
+        {"name": "FRONTEND_URL",                    "valueFrom": "arn:aws:ssm:us-east-1:123456789012:parameter/cruddur/backend-flask/FRONTEND_URL"},
+        {"name": "BACKEND_URL",                     "valueFrom": "arn:aws:ssm:us-east-1:123456789012:parameter/cruddur/backend-flask/BACKEND_URL"},
         {"name": "AWS_ACCESS_KEY_ID",               "valueFrom": "arn:aws:ssm:us-east-1:123456789012:parameter/cruddur/backend-flask/AWS_ACCESS_KEY_ID"},
         {"name": "AWS_SECRET_ACCESS_KEY",           "valueFrom": "arn:aws:ssm:us-east-1:123456789012:parameter/cruddur/backend-flask/AWS_SECRET_ACCESS_KEY"},
         {"name": "CONNECTION_URL",                  "valueFrom": "arn:aws:ssm:us-east-1:123456789012:parameter/cruddur/backend-flask/CONNECTION_URL" },

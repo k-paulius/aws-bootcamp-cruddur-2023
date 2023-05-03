@@ -31,7 +31,7 @@ aws ecr create-repository \
   --image-tag-mutability MUTABLE
 # build and push backend app to ECR
 export ECR_BACKEND_FLASK_URL="$AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/backend-flask"
-docker build -t backend-flask ./backend-flask
+docker build -t backend-flask -f backend-flask/Dockerfile.prod ./backend-flask
 docker tag backend-flask:latest $ECR_BACKEND_FLASK_URL:latest
 docker push $ECR_BACKEND_FLASK_URL:latest
 

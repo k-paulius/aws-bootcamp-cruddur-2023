@@ -1,0 +1,49 @@
+#
+# Build Image
+#
+FROM 123456789012.dkr.ecr.us-east-1.amazonaws.com/cruddur-python:3.10-slim-bullseye as build
+
+# install extra packages
+RUN apt-get update; \
+    apt-get install -y --no-install-recommends \
+	      build-essential gcc 
+
+WORKDIR /usr/app
+RUN python -m venv /usr/app/venv
+ENV PATH="/usr/app/venv/bin:$PATH"
+
+COPY requirements.txt .
+RUN pip3 install -r requirements.txt
+
+#
+# Production Image
+#
+# pin base image to a minor version for stability
+FROM 123456789012.dkr.ecr.us-east-1.amazonaws.com/cruddur-python:3.10-slim-bullseye
+
+# create user "python"
+RUN set -eux; \
+	groupadd -r python -g 999; \
+    useradd -r -g python -u 999 --home-dir=/usr/app --shell=/bin/bash python; \
+	mkdir -p /usr/app; \
+	chown -R python:python /usr/app
+
+# install extra packages
+RUN apt-get update; \
+    apt-get install -y --no-install-recommends curl; \
+	rm -rf /var/lib/apt/lists/*
+
+# set working directory
+WORKDIR /usr/app/venv
+
+# use non-root user
+USER python
+
+COPY --chown=python:python --from=build /usr/app/venv .
+COPY --chown=python:python . .
+
+ENV PATH="/usr/app/venv/bin:$PATH"
+
+EXPOSE 4567
+CMD [ "gunicorn", "--bind", "0.0.0.0:4567", "app:app" ]
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 CMD curl -f http://localhost:4567/api/health-check || exit 1

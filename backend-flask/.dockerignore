@@ -1,5 +1,9 @@
 .dockerignore
 .gitignore
 Dockerfile
+Dockerfile.prod
 README.md
 .env.example
+bin
+!bin/flask/health-check
+db

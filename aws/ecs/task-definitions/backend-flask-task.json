@@ -16,7 +16,7 @@
       "healthCheck": {
         "command": [
           "CMD-SHELL",
-          "python /usr/app/bin/flask/health-check"
+          "python /usr/app/venv/bin/flask/health-check"
         ],
         "interval": 30,
         "timeout": 5,

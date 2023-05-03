@@ -1,0 +1,11 @@
+#! /usr/bin/bash
+
+docker build \
+  --build-arg REACT_APP_BACKEND_URL=$(aws ssm get-parameter --name "/cruddur/frontend-react-js/REACT_APP_BACKEND_URL" --query 'Parameter.Value' --output text) \
+  --build-arg REACT_APP_AWS_USER_POOLS_ID=$(aws ssm get-parameter --name "/cruddur/frontend-react-js/REACT_APP_AWS_USER_POOLS_ID" --query 'Parameter.Value' --output text) \
+  --build-arg REACT_APP_CLIENT_ID=$(aws ssm get-parameter --name "/cruddur/frontend-react-js/REACT_APP_CLIENT_ID" --query 'Parameter.Value' --output text) \
+  --build-arg REACT_APP_AWS_PROJECT_REGION=$AWS_DEFAULT_REGION \
+  --build-arg REACT_APP_AWS_COGNITO_REGION=$AWS_DEFAULT_REGION \
+  -t frontend-react-js \
+  -f frontend-react-js/Dockerfile.prod \
+  ./frontend-react-js

@@ -1,7 +1,7 @@
 #! /usr/bin/bash
 
-SEED_PATH="$(realpath .)/db/seed.sql"
-echo $SEED_PATH
+DIR_PATH=$(dirname $(readlink -f $0))
+SEED_PATH="$DIR_PATH/../../backend-flask/db/seed.sql"
 
 if [ "$1" = "prod" ]; then
   echo "!! Production Mode !!"

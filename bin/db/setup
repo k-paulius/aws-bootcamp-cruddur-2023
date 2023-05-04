@@ -1,10 +1,10 @@
 #! /usr/bin/bash
 set -e # stop if it fails at any point
 
-BIN_PATH="$(realpath .)/bin"
+DIR_PATH=$(dirname $(readlink -f $0))
 
-source "$BIN_PATH/db/drop"
-source "$BIN_PATH/db/create"
-source "$BIN_PATH/db/schema-load"
-source "$BIN_PATH/db/seed"
-"$BIN_PATH/db/update_cognito_user_ids"
+"$DIR_PATH/drop"
+"$DIR_PATH/create"
+"$DIR_PATH/schema-load"
+"$DIR_PATH/seed"
+"$DIR_PATH/update_cognito_user_ids"

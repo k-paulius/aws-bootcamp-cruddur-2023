@@ -1,7 +1,7 @@
 #! /usr/bin/bash
 
-SCHEMA_PATH="$(realpath .)/db/schema.sql"
-echo $SCHEMA_PATH
+DIR_PATH=$(dirname $(readlink -f $0))
+SCHEMA_PATH="$DIR_PATH/../../backend-flask/db/schema.sql"
 
 if [ "$1" = "prod" ]; then
   echo "!! Production Mode !!"

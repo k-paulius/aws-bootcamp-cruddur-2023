@@ -1,0 +1,6 @@
+#!/usr/bin/bash
+
+DIR_PATH=$(dirname $(readlink -f $0))
+TASK_FILE="$DIR_PATH/../../aws/ecs/task-definitions/frontend-react-js-task.json"
+
+aws ecs register-task-definition --cli-input-json file://$TASK_FILE

@@ -1,4 +1,9 @@
 tasks:
+  - name: env-vars
+    env:
+      VAR1: testValue
+      VAR2: $AWS_DEFAULT_REGION
+      VAR3: concat_$AWS_DEFAULT_REGION
   - name: aws-cli
     env:
       AWS_CLI_AUTO_PROMPT: on-partial

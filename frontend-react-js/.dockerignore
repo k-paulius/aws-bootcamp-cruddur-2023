@@ -3,6 +3,7 @@
 Dockerfile
 Dockerfile.prod
 README.md
+.env
 .env.example
 node_modules/
 build/

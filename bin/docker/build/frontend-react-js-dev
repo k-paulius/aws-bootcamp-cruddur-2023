@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+
+DIR_PATH=$(dirname $(readlink -f $0))
+APP_DIR="$DIR_PATH/../../../frontend-react-js"
+
+docker build \
+  -t frontend-react-js \
+  -f "$APP_DIR/Dockerfile" \
+  $APP_DIR

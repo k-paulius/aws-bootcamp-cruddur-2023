@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+
+DIR_PATH=$(dirname $(readlink -f $0))
+APP_DIR="$DIR_PATH/../../../backend-flask"
+
+docker build \
+  -t backend-flask \
+  -f "$APP_DIR/Dockerfile" \
+  $APP_DIR

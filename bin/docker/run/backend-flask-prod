@@ -16,6 +16,6 @@ docker run --rm -p 4567:4567 -it \
   #-e OTEL_SERVICE_NAME="backend-flask" \
   #-e OTEL_EXPORTER_OTLP_ENDPOINT="https://api.honeycomb.io" \
   #-e OTEL_EXPORTER_OTLP_HEADERS="x-honeycomb-team=${HONEYCOMB_API_KEY}" \
-  #-e AWS_XRAY_URL="*${BACKEND_HOSTNAME}*" \
+  #-e AWS_XRAY_URL="*4567-${GITPOD_WORKSPACE_ID}.${GITPOD_WORKSPACE_CLUSTER_HOST}*" \
   #-e AWS_XRAY_DAEMON_ADDRESS: "xray-daemon:2000" \
   #-e ROLLBAR_ACCESS_TOKEN: "${ROLLBAR_ACCESS_TOKEN}" \

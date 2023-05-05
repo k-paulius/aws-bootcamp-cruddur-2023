@@ -1,9 +1,4 @@
 tasks:
-  - name: env-vars
-    command: |
-      export VAR1=testValue
-      export VAR2=$AWS_DEFAULT_REGION
-      export VAR3=concat_${GITPOD_WORKSPACE_ID}
   - name: aws-cli
     env:
       AWS_CLI_AUTO_PROMPT: on-partial

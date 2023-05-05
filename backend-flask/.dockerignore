@@ -9,3 +9,4 @@ bin
 !bin/flask/health-check
 db
 !db/sql
+.env.dev.run

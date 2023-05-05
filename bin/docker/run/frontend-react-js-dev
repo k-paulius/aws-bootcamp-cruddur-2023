@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+
+DIR_PATH=$(dirname $(readlink -f $0))
+ENVFILE_PATH="$DIR_PATH/../../../frontend-react-js/.env"
+ENVFILE_RUN_PATH="$ENVFILE_PATH.dev.run"
+
+envsubst < $ENVFILE_PATH > $ENVFILE_RUN_PATH
+
+docker run --rm -it \
+  -p 3000:3000  \
+  --env-file $ENVFILE_RUN_PATH \
+  --network cruddur-net \
+  frontend-react-js
+
+rm $ENVFILE_RUN_PATH

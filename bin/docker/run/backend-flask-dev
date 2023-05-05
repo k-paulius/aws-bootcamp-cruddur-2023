@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+
+DIR_PATH=$(dirname $(readlink -f $0))
+ENVFILE_PATH="$DIR_PATH/../../../backend-flask/.env"
+ENVFILE_RUN_PATH="$ENVFILE_PATH.dev.run"
+
+envsubst < $ENVFILE_PATH > $ENVFILE_RUN_PATH
+
+docker run --rm -it \
+  -p 4567:4567  \
+  --env-file $ENVFILE_RUN_PATH \
+  --network cruddur-net \
+  backend-flask
+
+rm $ENVFILE_RUN_PATH

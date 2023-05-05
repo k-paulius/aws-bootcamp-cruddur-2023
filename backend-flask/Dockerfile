@@ -1,5 +1,5 @@
 # pin base image to a minor version for stability
-FROM 123456789012.dkr.ecr.us-east-1.amazonaws.com/cruddur-python:3.10-slim-bullseye
+FROM python:3.10-slim-bullseye
 
 # create user "python"
 RUN set -eux; \

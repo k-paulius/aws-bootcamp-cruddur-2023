@@ -1,3 +1,10 @@
 #! /usr/bin/bash
 
-psql $(sed 's/\/cruddur//g' <<< "$CONNECTION_URL") -c "CREATE DATABASE cruddur;"
+if [ "$1" = "prod" ]; then
+  echo "!! Production Mode !!"
+  CONN_URL=$PROD_CONNECTION_URL
+else
+  CONN_URL=$DEV_CONNECTION_URL
+fi
+
+psql $(sed 's/\/cruddur//g' <<< "$CONN_URL") -c "CREATE DATABASE cruddur;"

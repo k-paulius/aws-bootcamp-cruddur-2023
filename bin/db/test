@@ -4,7 +4,11 @@ import psycopg
 import os
 import sys
 
-connection_url = os.getenv("CONNECTION_URL")
+if len(sys.argv) > 1 and sys.argv[1] == "prod":
+  connection_url = os.getenv("PROD_CONNECTION_URL")
+  print('!! Production Mode !!')
+else:
+  connection_url = os.getenv("DEV_CONNECTION_URL")
 
 conn = None
 try:

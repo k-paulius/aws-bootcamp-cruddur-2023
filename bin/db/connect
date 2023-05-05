@@ -4,7 +4,7 @@ if [ "$1" = "prod" ]; then
   echo "!! Production Mode !!"
   CONN_URL=$PROD_CONNECTION_URL
 else
-  CONN_URL=$CONNECTION_URL
+  CONN_URL=$DEV_CONNECTION_URL
 fi
 
 psql $CONN_URL

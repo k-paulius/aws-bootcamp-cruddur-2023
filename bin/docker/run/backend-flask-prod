@@ -1,5 +1,6 @@
 #! /usr/bin/bash
 
+# this should only be used for very limited testing since it is not configured to connect to prod data stores
 docker run --rm -p 4567:4567 -it \
   -e FRONTEND_URL='*' \
   -e BACKEND_URL='*' \
@@ -9,13 +10,5 @@ docker run --rm -p 4567:4567 -it \
   -e AWS_SESSION_TOKEN=$AWS_SESSION_TOKEN \
   -e AWS_COGNITO_USER_POOL_ID=$AWS_COGNITO_USER_POOL_ID \
   -e AWS_COGNITO_USER_POOL_CLIENT_ID=$AWS_COGNITO_USER_POOL_CLIENT_ID \
-  backend-flask
-
-  #-e AWS_ENDPOINT_URL="http://dynamodb-local:8000" \
-  #-e CONNECTION_URL="postgresql://postgres:password@db:5432/cruddur" \
-  #-e OTEL_SERVICE_NAME="backend-flask" \
-  #-e OTEL_EXPORTER_OTLP_ENDPOINT="https://api.honeycomb.io" \
-  #-e OTEL_EXPORTER_OTLP_HEADERS="x-honeycomb-team=${HONEYCOMB_API_KEY}" \
-  #-e AWS_XRAY_URL="*4567-${GITPOD_WORKSPACE_ID}.${GITPOD_WORKSPACE_CLUSTER_HOST}*" \
-  #-e AWS_XRAY_DAEMON_ADDRESS: "xray-daemon:2000" \
-  #-e ROLLBAR_ACCESS_TOKEN: "${ROLLBAR_ACCESS_TOKEN}" \
+  backend-flask-prod \
+  /bin/bash

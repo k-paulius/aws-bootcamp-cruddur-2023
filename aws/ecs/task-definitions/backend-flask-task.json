@@ -29,7 +29,7 @@
       "healthCheck": {
         "command": [
           "CMD-SHELL",
-          "python /usr/app/venv/bin/flask/health-check"
+          "curl -f http://localhost:4567/api/health-check || exit 1"
         ],
         "interval": 30,
         "timeout": 5,

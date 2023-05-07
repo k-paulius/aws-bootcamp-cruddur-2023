@@ -1,4 +1,4 @@
-#! /usr/bin/bash
+#!/usr/bin/env bash
 
 DIR_PATH=$(dirname $(readlink -f $0))
 SEED_PATH="$DIR_PATH/../../backend-flask/db/seed.sql"

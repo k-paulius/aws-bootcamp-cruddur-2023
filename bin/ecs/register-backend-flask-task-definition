@@ -1,4 +1,4 @@
-#!/usr/bin/bash
+#!/usr/bin/env bash
 
 DIR_PATH=$(dirname $(readlink -f $0))
 TASK_FILE="$DIR_PATH/../../aws/ecs/task-definitions/backend-flask-task.json"

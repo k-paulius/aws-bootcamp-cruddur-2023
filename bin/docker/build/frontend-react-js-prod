@@ -1,4 +1,4 @@
-#! /usr/bin/bash
+#!/usr/bin/env bash
 
 DIR_PATH=$(dirname $(readlink -f $0))
 APP_DIR="$DIR_PATH/../../../frontend-react-js"

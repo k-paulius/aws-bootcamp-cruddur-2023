@@ -1,4 +1,4 @@
-#! /usr/bin/bash
+#!/usr/bin/env bash
 
 CONN_URL=$DEV_CONNECTION_URL
 

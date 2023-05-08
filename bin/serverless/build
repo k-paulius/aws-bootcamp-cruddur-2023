@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+
+DIR_PATH=$(dirname $(readlink -f $0))
+PROCESS_IMAGES_LAMBDA_PATH="$DIR_PATH/../../aws/lambdas/process-images"
+
+cd $PROCESS_IMAGES_LAMBDA_PATH
+
+npm install
+rm -rf node_modules/sharp
+SHARP_IGNORE_GLOBAL_LIBVIPS=1 npm install --arch=x64 --platform=linux --libc=glibc sharp

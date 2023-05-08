@@ -36,6 +36,11 @@ tasks:
       git config --global gpg.format ssh
       git config --global user.signingkey "$SSH_SIGNING_KEY"
       git config --global commit.gpgsign true
+  - name: cdk
+    command: |
+      npm install aws-cdk -g
+      cd thumbing-serverless-cdk
+      npm i
 vscode:
   extensions:
     - 42Crunch.vscode-openapi

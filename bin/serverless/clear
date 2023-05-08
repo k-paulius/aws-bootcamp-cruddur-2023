@@ -1,4 +1,4 @@
 #!/usr/bin/env bash
 
-aws s3 rm "s3://cruddur-uploaded-avatars-mjkdh4klotg9fkh3/avatars/original/Bean.jpg"
+aws s3 rm "s3://cruddur-uploaded-avatars-mjkdh4klotg9fkh3/Bean.jpg"
 aws s3 rm "s3://assets.$CRUDDUR_DOMAIN_NAME/avatars/processed/Bean.jpg"

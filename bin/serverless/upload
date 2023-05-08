@@ -3,4 +3,4 @@
 DIR_PATH=$(dirname $(readlink -f $0))
 DATA_FILES_PATH="$DIR_PATH/files"
 
-aws s3 cp "$DATA_FILES_PATH/Bean.jpg" "s3://cruddur-uploaded-avatars-mjkdh4klotg9fkh3/avatars/original/Bean.jpg"
+aws s3 cp "$DATA_FILES_PATH/Bean.jpg" "s3://cruddur-uploaded-avatars-mjkdh4klotg9fkh3/Bean.jpg"

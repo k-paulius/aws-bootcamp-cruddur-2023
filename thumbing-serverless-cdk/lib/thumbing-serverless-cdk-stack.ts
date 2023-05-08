@@ -19,7 +19,6 @@ export class ThumbingServerlessCdkStack extends cdk.Stack {
     const assetsBucketName: string = process.env.THUMBING_ASSETS_BUCKET_NAME as string;
     const uploadsBucketName: string = process.env.THUMBING_UPLOADS_BUCKET_NAME as string;
     const functionPath: string = process.env.THUMBING_FUNCTION_PATH as string;
-    const folderInput: string = process.env.THUMBING_S3_FOLDER_INPUT as string;
     const folderOutput: string = process.env.THUMBING_S3_FOLDER_OUTPUT as string;
     const webhookUrl: string = process.env.THUMBING_WEBHOOK_URL as string;
     const topicName: string = process.env.THUMBING_TOPIC_NAME as string;
@@ -29,10 +28,10 @@ export class ThumbingServerlessCdkStack extends cdk.Stack {
     const assetsBucket = this.importBucket(assetsBucketName);
 
     // create ThumbLambda
-    const lambda = this.createLambda(functionPath, assetsBucketName, folderInput, folderOutput);
+    const lambda = this.createLambda(functionPath, assetsBucketName, folderOutput);
 
     // add S3 event notification to uploads bucket; triggers ThumbLambda
-    this.createS3NotifyToLambda(folderInput, lambda, uploadsBucket);
+    this.createS3NotifyToLambda(lambda, uploadsBucket);
 
     // create policies
     const s3UploadsReadWritePolicy = this.createPolicyBucketAccess(uploadsBucket.bucketArn)
@@ -61,14 +60,13 @@ export class ThumbingServerlessCdkStack extends cdk.Stack {
     return bucket;
   }
 
-  createLambda(functionPath: string, bucketName: string, folderInput: string, folderOutput: string): lambda.IFunction {
+  createLambda(functionPath: string, bucketName: string, folderOutput: string): lambda.IFunction {
     const lambdaFunction = new lambda.Function(this, 'ThumbLambda', {
       runtime: lambda.Runtime.NODEJS_18_X,
       handler: 'index.handler',
       code: lambda.Code.fromAsset(functionPath),
       environment: {
         DEST_BUCKET_NAME: bucketName,
-        FOLDER_INPUT: folderInput,
         FOLDER_OUTPUT: folderOutput,
         PROCESS_WIDTH: '512',
         PROCESS_HEIGHT: '512'
@@ -77,12 +75,11 @@ export class ThumbingServerlessCdkStack extends cdk.Stack {
     return lambdaFunction;
   }
 
-  createS3NotifyToLambda(prefix: string, lambda: lambda.IFunction, bucket: s3.IBucket): void {
+  createS3NotifyToLambda(lambda: lambda.IFunction, bucket: s3.IBucket): void {
     const destination = new s3n.LambdaDestination(lambda);
     bucket.addEventNotification(
       s3.EventType.OBJECT_CREATED_PUT,
-      destination,
-      {prefix: prefix} // folder to contain the original images
+      destination
     );
   }
 

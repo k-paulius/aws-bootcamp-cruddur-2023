@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+
+DIR_PATH=$(dirname $(readlink -f $0))
+
+"$DIR_PATH/db/setup"
+"$DIR_PATH/ddb/schema-load"
+"$DIR_PATH/ddb/seed"

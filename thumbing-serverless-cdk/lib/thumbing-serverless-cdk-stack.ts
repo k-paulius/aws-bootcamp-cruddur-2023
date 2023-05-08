@@ -16,34 +16,40 @@ export class ThumbingServerlessCdkStack extends cdk.Stack {
     super(scope, id, props);
 
     // The code that defines your stack goes here
-    const bucketName: string = process.env.THUMBING_BUCKET_NAME as string;
+    const assetsBucketName: string = process.env.THUMBING_ASSETS_BUCKET_NAME as string;
+    const uploadsBucketName: string = process.env.THUMBING_UPLOADS_BUCKET_NAME as string;
     const functionPath: string = process.env.THUMBING_FUNCTION_PATH as string;
     const folderInput: string = process.env.THUMBING_S3_FOLDER_INPUT as string;
     const folderOutput: string = process.env.THUMBING_S3_FOLDER_OUTPUT as string;
     const webhookUrl: string = process.env.THUMBING_WEBHOOK_URL as string;
     const topicName: string = process.env.THUMBING_TOPIC_NAME as string;
 
-    //const bucket = this.createBucket(bucketName);
-    const bucket = this.importBucket(bucketName);
-    const lambda = this.createLambda(functionPath, bucketName, folderInput, folderOutput);
+    // create a new uploads bucket and import existing assets bucket
+    const uploadsBucket = this.createBucket(uploadsBucketName);
+    const assetsBucket = this.importBucket(assetsBucketName);
 
-    // add S3 event notification
-    this.createS3NotifyToLambda(folderInput, lambda, bucket);
+    // create ThumbLambda
+    const lambda = this.createLambda(functionPath, assetsBucketName, folderInput, folderOutput);
+
+    // add S3 event notification to uploads bucket; triggers ThumbLambda
+    this.createS3NotifyToLambda(folderInput, lambda, uploadsBucket);
 
     // create policies
-    const s3ReadWritePolicy = this.createPolicyBucketAccess(bucket.bucketArn);
-    lambda.addToRolePolicy(s3ReadWritePolicy);
+    const s3UploadsReadWritePolicy = this.createPolicyBucketAccess(uploadsBucket.bucketArn)
+    const s3AssetsReadWritePolicy = this.createPolicyBucketAccess(assetsBucket.bucketArn)
+    lambda.addToRolePolicy(s3UploadsReadWritePolicy);
+    lambda.addToRolePolicy(s3AssetsReadWritePolicy);
 
     // create topic and subscription
     const snsTopic = this.createSnsTopic(topicName);
     this.createSnsSubscription(snsTopic, webhookUrl);
 
-    // add our s3 event notifications
-    this.createS3NotifyToSns(folderOutput, snsTopic, bucket);
+    // add S3 event notification to assets bucket; triggers SNS
+    this.createS3NotifyToSns(folderOutput, snsTopic, assetsBucket);
   }
 
   createBucket(bucketName: string): s3.IBucket {
-    const bucket = new s3.Bucket(this, 'AssetsBucket', {
+    const bucket = new s3.Bucket(this, 'UploadsBucket', {
       bucketName: bucketName,
       removalPolicy: cdk.RemovalPolicy.DESTROY
     });

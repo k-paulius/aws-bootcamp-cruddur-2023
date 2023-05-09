@@ -26,6 +26,7 @@ USER python
 
 COPY --chown=python:python . .
 
+ENV PYTHONUNBUFFERED=1
 ENV FLASK_DEBUG=1
 ENV PORT=4567
 

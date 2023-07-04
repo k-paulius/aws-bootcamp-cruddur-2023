@@ -11,16 +11,17 @@ parent_path = os.path.abspath(os.path.join(current_path, '..', '..', 'backend-fl
 sys.path.append(parent_path)
 from lib.db import db
 
-def update_users_with_cognito_user_id(handle, sub):
+def update_users_with_cognito_user_id(handle, sub, email):
     sql = """
     UPDATE public.users
-    SET cognito_user_id = %(sub)s
+    SET cognito_user_id = %(sub)s, email = %(email)s
     WHERE
       users.handle = %(handle)s;
   """
     db.query_commit(sql, {
         'handle': handle,
-        'sub': sub
+        'sub': sub,
+        'email': email
     })
 
 
@@ -31,7 +32,8 @@ def get_cognito_user_ids():
         'UserPoolId': userpool_id,
         'AttributesToGet': [
             'preferred_username',
-            'sub'
+            'sub',
+            'email'
         ]
     }
     response = client.list_users(**params)
@@ -40,17 +42,18 @@ def get_cognito_user_ids():
     for user in users:
         attrs = user['Attributes']
         sub = next((a for a in attrs if a["Name"] == 'sub'), None)
-        handle = next(
-            (a for a in attrs if a["Name"] == 'preferred_username'), None)
-        dict_users[handle['Value']] = sub['Value']
+        handle = next((a for a in attrs if a["Name"] == 'preferred_username'), None)
+        email = next((a for a in attrs if a["Name"] == 'email'), None)
+        dict_users[handle['Value']] = {'sub': sub['Value'], 'email': email['Value']}
     return dict_users
 
 
 users = get_cognito_user_ids()
 
-for handle, sub in users.items():
-    print('----', handle, sub)
+for handle, att in users.items():
+    print('----', handle, att['sub'])
     update_users_with_cognito_user_id(
         handle=handle,
-        sub=sub
+        sub=att['sub'],
+        email=att['email']
     )

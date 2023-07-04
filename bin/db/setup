@@ -8,3 +8,4 @@ DIR_PATH=$(dirname $(readlink -f $0))
 "$DIR_PATH/schema-load"
 "$DIR_PATH/seed"
 "$DIR_PATH/update_cognito_user_ids"
+"$DIR_PATH/migrate"

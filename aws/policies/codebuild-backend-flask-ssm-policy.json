@@ -1,0 +1,17 @@
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Sid": "SSMGetParams",
+            "Effect": "Allow",
+            "Action": [
+                "ssm:GetParameters"
+            ],
+            "Resource": [
+                "arn:aws:ssm:us-east-1:123456789012:parameter/cruddur/build/ECR_AWS_ACCOUNT_ID",
+                "arn:aws:ssm:us-east-1:123456789012:parameter/cruddur/build/ECR_AWS_REGION",
+                "arn:aws:ssm:us-east-1:123456789012:parameter/cruddur/build/BACKEND_IMAGE_REPO_NAME"
+            ]
+        }
+    ]
+}

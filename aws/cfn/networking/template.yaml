@@ -1,0 +1,463 @@
+#
+# VPC Template - 2 tiers (private/public) in 3 AZs
+#
+# creates:
+#   - VPC
+#     - 10.xxx.0.0/16
+#   - 3 Public Subnets
+#     - 10.xxx.0.0/20
+#   - 3 Private Subnets
+#   - Internet Gateway
+#   - Route Tables
+#   - NACLs
+#
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'VPC Template'
+
+Parameters:
+
+  IPv4Block:
+    Description: 'Second Octet of the VPC network (10.xxx.0.0/16).'
+    Type: Number
+    Default: 16
+    ConstraintDescription: 'Malformed input-parameter Second Octet of the VPC network must be between 0 and 255'
+    MinValue: 0
+    MaxValue: 255
+
+  VPCName:
+    Description: 'Name of the VPC. VPC will be named vpcname-vpc.'
+    Type: String
+    Default: 'vpcname'
+    ConstraintDescription: 'Malformed input-parameter VPC name must only contain uppercase/lowercase letters, numbers, and dashes (-) and be less than 40 characters long.'
+    AllowedPattern: '[A-Za-z0-9-]+'
+    MinLength: 1
+    MaxLength: 40
+
+Conditions:
+
+  IsUSEast1Region: !Equals [!Ref 'AWS::Region', 'us-east-1']
+
+Resources:
+
+  VPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: !Sub '10.${IPv4Block}.0.0/16'
+      EnableDnsHostnames: true
+      EnableDnsSupport: true
+      InstanceTenancy: default
+      Tags:
+      - Key: 'Name'
+        Value: !Sub '${VPCName}-vpc'
+
+  VPCCidrBlock:
+    Type: AWS::EC2::VPCCidrBlock
+    Properties:
+      AmazonProvidedIpv6CidrBlock: true
+      VpcId: !Ref VPC
+
+  DHCPOptions:
+    Type: AWS::EC2::DHCPOptions
+    Properties:
+      DomainName: !If [IsUSEast1Region, 'ec2.internal', 'compute.internal']
+      DomainNameServers: [AmazonProvidedDNS]
+      Tags:
+      - Key: Name
+        Value: !Sub '${VPCName}-dhcpos'
+
+  VPCDHCPOptionsAssociation:
+    Type: AWS::EC2::VPCDHCPOptionsAssociation
+    Properties:
+      DhcpOptionsId: !Ref DHCPOptions
+      VpcId: !Ref VPC
+
+  SubnetAPublic:
+    DependsOn: VPCCidrBlock
+    Type: AWS::EC2::Subnet
+    Properties:
+      AvailabilityZone: !Select [ 0, !GetAZs '' ]
+      CidrBlock: !Select [0, !Cidr [!GetAtt 'VPC.CidrBlock', 6, 12]]
+      Ipv6CidrBlock: !Select [0, !Cidr [!Select [0, !GetAtt 'VPC.Ipv6CidrBlocks'], 6, 64]]
+      MapPublicIpOnLaunch: true
+      AssignIpv6AddressOnCreation: true
+      Tags:
+      - Key: Name
+        Value: !Sub '${VPCName}-sn-public-a'
+      VpcId: !Ref VPC
+
+  SubnetAPrivate:
+    DependsOn: VPCCidrBlock
+    Type: AWS::EC2::Subnet
+    Properties:
+      AvailabilityZone: !Select [ 0, !GetAZs '' ]
+      CidrBlock: !Select [1, !Cidr [!GetAtt 'VPC.CidrBlock', 6, 12]]
+      Ipv6CidrBlock: !Select [1, !Cidr [!Select [0, !GetAtt 'VPC.Ipv6CidrBlocks'], 6, 64]]
+      MapPublicIpOnLaunch: false
+      AssignIpv6AddressOnCreation: false
+      Tags:
+      - Key: Name
+        Value: !Sub '${VPCName}-sn-private-a'
+      VpcId: !Ref VPC
+
+  SubnetBPublic:
+    DependsOn: VPCCidrBlock
+    Type: AWS::EC2::Subnet
+    Properties:
+      AvailabilityZone: !Select [ 1, !GetAZs '' ]
+      CidrBlock: !Select [2, !Cidr [!GetAtt 'VPC.CidrBlock', 6, 12]]
+      Ipv6CidrBlock: !Select [2, !Cidr [!Select [0, !GetAtt 'VPC.Ipv6CidrBlocks'], 6, 64]]
+      MapPublicIpOnLaunch: true
+      AssignIpv6AddressOnCreation: true
+      Tags:
+      - Key: Name
+        Value: !Sub '${VPCName}-sn-public-b'
+      VpcId: !Ref VPC
+
+  SubnetBPrivate:
+    DependsOn: VPCCidrBlock
+    Type: AWS::EC2::Subnet
+    Properties:
+      AvailabilityZone: !Select [ 1, !GetAZs '' ]
+      CidrBlock: !Select [3, !Cidr [!GetAtt 'VPC.CidrBlock', 6, 12]]
+      Ipv6CidrBlock: !Select [3, !Cidr [!Select [0, !GetAtt 'VPC.Ipv6CidrBlocks'], 6, 64]]
+      MapPublicIpOnLaunch: false
+      AssignIpv6AddressOnCreation: false
+      Tags:
+      - Key: Name
+        Value: !Sub '${VPCName}-sn-private-b'
+      VpcId: !Ref VPC
+
+  SubnetCPublic:
+    DependsOn: VPCCidrBlock
+    Type: AWS::EC2::Subnet
+    Properties:
+      AvailabilityZone: !Select [ 2, !GetAZs '' ]
+      CidrBlock: !Select [4, !Cidr [!GetAtt 'VPC.CidrBlock', 6, 12]]
+      Ipv6CidrBlock: !Select [4, !Cidr [!Select [0, !GetAtt 'VPC.Ipv6CidrBlocks'], 6, 64]]
+      MapPublicIpOnLaunch: true
+      AssignIpv6AddressOnCreation: true
+      Tags:
+      - Key: Name
+        Value: !Sub '${VPCName}-sn-public-c'
+      VpcId: !Ref VPC
+
+  SubnetCPrivate:
+    DependsOn: VPCCidrBlock
+    Type: AWS::EC2::Subnet
+    Properties:
+      AvailabilityZone: !Select [ 2, !GetAZs '' ]
+      CidrBlock: !Select [5, !Cidr [!GetAtt 'VPC.CidrBlock', 6, 12]]
+      Ipv6CidrBlock: !Select [5, !Cidr [!Select [0, !GetAtt 'VPC.Ipv6CidrBlocks'], 6, 64]]
+      MapPublicIpOnLaunch: false
+      AssignIpv6AddressOnCreation: false
+      Tags:
+      - Key: Name
+        Value: !Sub '${VPCName}-sn-private-c'
+      VpcId: !Ref VPC
+
+  InternetGateway:
+    Type: AWS::EC2::InternetGateway
+    Properties:
+      Tags:
+      - Key: Name
+        Value: !Sub '${VPCName}-igw'
+
+  InternetGatewayAttachment:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      InternetGatewayId: !Ref InternetGateway
+      VpcId: !Ref VPC
+
+  RouteTableAPublic:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      Tags:
+      - Key: Name
+        Value: !Sub '${VPCName}-rtb-public-a'
+      VpcId: !Ref VPC
+
+  RouteTableBPublic:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      Tags:
+      - Key: Name
+        Value: !Sub '${VPCName}-rtb-public-b'
+      VpcId: !Ref VPC
+
+  RouteTableCPublic:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      Tags:
+      - Key: Name
+        Value: !Sub '${VPCName}-rtb-public-c'
+      VpcId: !Ref VPC
+
+  RouteTableAPrivate:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      Tags:
+      - Key: Name
+        Value: !Sub '${VPCName}-rtb-private-a'
+      VpcId: !Ref VPC
+
+  RouteTableBPrivate:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      Tags:
+      - Key: Name
+        Value: !Sub '${VPCName}-rtb-private-b'
+      VpcId: !Ref VPC
+
+  RouteTableCPrivate:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      Tags:
+      - Key: Name
+        Value: !Sub '${VPCName}-rtb-private-c'
+      VpcId: !Ref VPC
+
+  RouteTableAssociationAPublic:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref RouteTableAPublic
+      SubnetId: !Ref SubnetAPublic
+
+  RouteTableAssociationBPublic:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref RouteTableBPublic
+      SubnetId: !Ref SubnetBPublic
+
+  RouteTableAssociationCPublic:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref RouteTableCPublic
+      SubnetId: !Ref SubnetCPublic
+
+  RouteTableAssociationAPrivate:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref RouteTableAPrivate
+      SubnetId: !Ref SubnetAPrivate
+
+  RouteTableAssociationBPrivate:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref RouteTableBPrivate
+      SubnetId: !Ref SubnetBPrivate
+
+  RouteTableAssociationCPrivate:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref RouteTableCPrivate
+      SubnetId: !Ref SubnetCPrivate
+
+  RouteTablePublicAInternetRouteIPv4:
+    Type: AWS::EC2::Route
+    DependsOn: InternetGatewayAttachment
+    Properties:
+      DestinationCidrBlock: '0.0.0.0/0'
+      GatewayId: !Ref InternetGateway
+      RouteTableId: !Ref RouteTableAPublic
+
+  RouteTablePublicBInternetRouteIPv4:
+    Type: AWS::EC2::Route
+    DependsOn: InternetGatewayAttachment
+    Properties:
+      DestinationCidrBlock: '0.0.0.0/0'
+      GatewayId: !Ref InternetGateway
+      RouteTableId: !Ref RouteTableBPublic
+
+  RouteTablePublicCInternetRouteIPv4:
+    Type: AWS::EC2::Route
+    DependsOn: InternetGatewayAttachment
+    Properties:
+      DestinationCidrBlock: '0.0.0.0/0'
+      GatewayId: !Ref InternetGateway
+      RouteTableId: !Ref RouteTableCPublic
+
+  RouteTablePublicAInternetRouteIPv6:
+    Type: AWS::EC2::Route
+    DependsOn: InternetGatewayAttachment
+    Properties:
+      DestinationIpv6CidrBlock: '::/0'
+      GatewayId: !Ref InternetGateway
+      RouteTableId: !Ref RouteTableAPublic
+
+  RouteTablePublicBInternetRouteIPv6:
+    Type: AWS::EC2::Route
+    DependsOn: InternetGatewayAttachment
+    Properties:
+      DestinationIpv6CidrBlock: '::/0'
+      GatewayId: !Ref InternetGateway
+      RouteTableId: !Ref RouteTableBPublic
+
+  RouteTablePublicCInternetRouteIPv6:
+    Type: AWS::EC2::Route
+    DependsOn: InternetGatewayAttachment
+    Properties:
+      DestinationIpv6CidrBlock: '::/0'
+      GatewayId: !Ref InternetGateway
+      RouteTableId: !Ref RouteTableCPublic
+
+  NetworkAclPublic:
+    Type: AWS::EC2::NetworkAcl
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+      - Key: Name
+        Value: !Sub '${VPCName}-nacl-public'
+
+  NetworkAclPrivate:
+    Type: AWS::EC2::NetworkAcl
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+      - Key: Name
+        Value: !Sub '${VPCName}-nacl-private'
+
+  SubnetNetworkAclAssociationAPublic:
+    Type: AWS::EC2::SubnetNetworkAclAssociation
+    Properties:
+      NetworkAclId: !Ref NetworkAclPublic
+      SubnetId: !Ref SubnetAPublic
+
+  SubnetNetworkAclAssociationAPrivate:
+    Type: AWS::EC2::SubnetNetworkAclAssociation
+    Properties:
+      NetworkAclId: !Ref NetworkAclPrivate
+      SubnetId: !Ref SubnetAPrivate
+
+  SubnetNetworkAclAssociationBPublic:
+    Type: AWS::EC2::SubnetNetworkAclAssociation
+    Properties:
+      NetworkAclId: !Ref NetworkAclPublic
+      SubnetId: !Ref SubnetBPublic
+
+  SubnetNetworkAclAssociationBPrivate:
+    Type: AWS::EC2::SubnetNetworkAclAssociation
+    Properties:
+      NetworkAclId: !Ref NetworkAclPrivate
+      SubnetId: !Ref SubnetBPrivate
+
+  SubnetNetworkAclAssociationCPublic:
+    Type: AWS::EC2::SubnetNetworkAclAssociation
+    Properties:
+      NetworkAclId: !Ref NetworkAclPublic
+      SubnetId: !Ref SubnetCPublic
+
+  SubnetNetworkAclAssociationCPrivate:
+    Type: AWS::EC2::SubnetNetworkAclAssociation
+    Properties:
+      NetworkAclId: !Ref NetworkAclPrivate
+      SubnetId: !Ref SubnetCPrivate
+
+  NetworkAclEntryPublicAllowAllIPv4In:
+    Type: AWS::EC2::NetworkAclEntry
+    Properties:
+      CidrBlock: '0.0.0.0/0'
+      Egress: false
+      NetworkAclId: !Ref NetworkAclPublic
+      Protocol: -1
+      RuleAction: allow
+      RuleNumber: 100
+
+  NetworkAclEntryPublicAllowAllIPv6In:
+    Type: AWS::EC2::NetworkAclEntry
+    Properties:
+      Ipv6CidrBlock: '::/0'
+      Egress: false
+      NetworkAclId: !Ref NetworkAclPublic
+      Protocol: -1
+      RuleAction: allow
+      RuleNumber: 101
+
+  NetworkAclEntryPublicAllowAllIPv4Out:
+    Type: AWS::EC2::NetworkAclEntry
+    Properties:
+      CidrBlock: '0.0.0.0/0'
+      Egress: true
+      NetworkAclId: !Ref NetworkAclPublic
+      Protocol: -1
+      RuleAction: allow
+      RuleNumber: 100
+
+  NetworkAclEntryPublicAllowAllIPv6Out:
+    Type: AWS::EC2::NetworkAclEntry
+    Properties:
+      Ipv6CidrBlock: '::/0'
+      Egress: true
+      NetworkAclId: !Ref NetworkAclPublic
+      Protocol: -1
+      RuleAction: allow
+      RuleNumber: 101
+
+  NetworkAclEntryPrivateAllowAllIPv4In:
+    Type: AWS::EC2::NetworkAclEntry
+    Properties:
+      CidrBlock: '0.0.0.0/0'
+      Egress: false
+      NetworkAclId: !Ref NetworkAclPrivate
+      Protocol: -1
+      RuleAction: allow
+      RuleNumber: 100
+
+  NetworkAclEntryPrivateAllowAllIPv6In:
+    Type: AWS::EC2::NetworkAclEntry
+    Properties:
+      Ipv6CidrBlock: '::/0'
+      Egress: false
+      NetworkAclId: !Ref NetworkAclPrivate
+      Protocol: -1
+      RuleAction: allow
+      RuleNumber: 101
+
+  NetworkAclEntryPrivateAllowAllIPv4Out:
+    Type: AWS::EC2::NetworkAclEntry
+    Properties:
+      CidrBlock: '0.0.0.0/0'
+      Egress: true
+      NetworkAclId: !Ref NetworkAclPrivate
+      Protocol: -1
+      RuleAction: allow
+      RuleNumber: 100
+
+  NetworkAclEntryPrivateAllowAllIPv6Out:
+    Type: AWS::EC2::NetworkAclEntry
+    Properties:
+      Ipv6CidrBlock: '::/0'
+      Egress: true
+      NetworkAclId: !Ref NetworkAclPrivate
+      Protocol: -1
+      RuleAction: allow
+      RuleNumber: 101
+
+Outputs:
+
+  StackName:
+    Description: 'Stack Name'
+    Value: !Ref 'AWS::StackName'
+
+  AZList:
+    Description: 'List of AZs'
+    Value: !Join [',', [!Select [0, !GetAZs ''], !Select [1, !GetAZs ''], !Select [2, !GetAZs '']]]
+
+  VPCId:
+    Description: 'VPC ID'
+    Value: !Ref VPC
+
+  IPv4CidrBlock:
+    Description: 'VPC IPv4 Cidr Block'
+    Value: !GetAtt 'VPC.CidrBlock'
+
+  IPv6CidrBlock:
+    Description: 'VPC IPv6 Cidr Block'
+    Value: !Select [ 0, !GetAtt 'VPC.Ipv6CidrBlocks' ]
+
+  PublicSubnets:
+    Description: 'Public Subnets'
+    Value: !Join [',', [!Ref SubnetAPublic, !Ref SubnetBPublic, !Ref SubnetCPublic]]
+
+  PrivateSubnets:
+    Description: 'Private Subnets'
+    Value: !Join [',', [!Ref SubnetAPrivate, !Ref SubnetBPrivate, !Ref SubnetCPrivate]]

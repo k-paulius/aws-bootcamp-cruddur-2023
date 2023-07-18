@@ -7,6 +7,7 @@
 #   - 3 Public Subnets
 #     - 10.xxx.0.0/20
 #   - 3 Private Subnets
+#     - 10.xxx.0.0/20
 #   - Internet Gateway
 #   - Route Tables
 #   - NACLs
@@ -445,6 +446,8 @@ Outputs:
   VPCId:
     Description: 'VPC ID'
     Value: !Ref VPC
+    Export:
+      Name: !Sub '${AWS::StackName}-VPCId'
 
   IPv4CidrBlock:
     Description: 'VPC IPv4 Cidr Block'
@@ -457,7 +460,11 @@ Outputs:
   PublicSubnets:
     Description: 'Public Subnets'
     Value: !Join [',', [!Ref SubnetAPublic, !Ref SubnetBPublic, !Ref SubnetCPublic]]
+    Export:
+      Name: !Sub '${AWS::StackName}-PublicSubnets'
 
   PrivateSubnets:
     Description: 'Private Subnets'
     Value: !Join [',', [!Ref SubnetAPrivate, !Ref SubnetBPrivate, !Ref SubnetCPrivate]]
+    Export:
+      Name: !Sub '${AWS::StackName}-PrivateSubnets'

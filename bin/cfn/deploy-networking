@@ -3,16 +3,18 @@ set -e
 
 DIR_PATH=$(dirname $(readlink -f $0))
 CFN_TEMPLATE_FILE="$DIR_PATH/../../aws/cfn/networking/template.yaml"
-CFN_STATE_BUCKET=cf-templates-gifqxra91o60
-
-# Cruddur environment: dev, prod
-CRUDDUR_ENV="prod"
-STACK_NAME="cruddur-$CRUDDUR_ENV-vpc"
 
 cfn-lint $CFN_TEMPLATE_FILE
+
+APP_ID="cruddur"
+APP_ENV="prod"
+CFN_STATE_BUCKET=$(aws ssm get-parameter --name "/$APP_ID/$APP_ENV/aws/cfn/state-bucket-name" --query 'Parameter.Value' --output text)
+STACK_NAME=$(aws ssm get-parameter --name "/${APP_ID}/${APP_ENV}/aws/cfn/networking-stack-name" --query 'Parameter.Value' --output text)
 
 aws cloudformation deploy \
     --template-file $CFN_TEMPLATE_FILE \
     --stack-name $STACK_NAME \
     --s3-bucket $CFN_STATE_BUCKET \
-    --parameter-overrides IPv4Block=20 VPCName=cruddur-$CRUDDUR_ENV
+    --parameter-overrides \
+        IPv4Block=20 \
+        VPCName=$APP_ID-$APP_ENV

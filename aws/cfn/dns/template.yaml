@@ -1,0 +1,29 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: DNS configuration
+
+Parameters:
+
+  pDomainName:
+    Description: A fully qualified domain name (e.g. domain.com)
+    Type: String
+
+Resources:
+
+  rDomainHostedZone:
+    Type: AWS::Route53::HostedZone
+    Properties:
+      Name: !Ref pDomainName
+      HostedZoneConfig:
+        Comment: !Sub '${pDomainName} public DNS zone'
+
+Outputs:
+
+  oDomainHostedZoneId:
+    Description: 'Hosted Zone ID'
+    Value: !Ref rDomainHostedZone
+    Export:
+      Name: !Sub '${AWS::StackName}-HostedZoneId'
+
+  oDomainHostedZoneNameServers:
+    Description: 'Hosted Zone Name Servers'
+    Value: !Join [',', !GetAtt rDomainHostedZone.NameServers]

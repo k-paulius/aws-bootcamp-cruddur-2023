@@ -1,13 +1,20 @@
 AWSTemplateFormatVersion: 2010-09-09
 Description: 'CloudFormation State Bucket'
 
+Parameters:
+
+  pStateBucketName:
+    Description: 'CloudFormation state bucket name'
+    Type: String
+
 Resources:
+
   rCFNStateBucket:
     DeletionPolicy: Retain
     UpdateReplacePolicy: Retain
     Type: AWS::S3::Bucket
     Properties:
-      BucketName: 'cf-templates-gifqxra91o60'
+      BucketName: !Ref pStateBucketName
       OwnershipControls:
         Rules:
           - ObjectOwnership: BucketOwnerEnforced

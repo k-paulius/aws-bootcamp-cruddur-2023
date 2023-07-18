@@ -4,12 +4,15 @@ set -e
 DIR_PATH=$(dirname $(readlink -f $0))
 CFN_TEMPLATE_FILE="$DIR_PATH/../../aws/cfn/s3/cfn-state-bucket.yaml"
 
-# Cruddur environment: dev, prod
-CRUDDUR_ENV="prod"
-STACK_NAME="cruddur-$CRUDDUR_ENV-cfn-state-bucket"
-
 cfn-lint $CFN_TEMPLATE_FILE
+
+APP_ID="cruddur"
+APP_ENV="prod"
+CFN_STATE_BUCKET=$(aws ssm get-parameter --name "/$APP_ID/$APP_ENV/aws/cfn/state-bucket-name" --query 'Parameter.Value' --output text)
+STACK_NAME="$APP_ID-$APP_ENV-cfn-state-bucket"
 
 aws cloudformation deploy \
     --template-file $CFN_TEMPLATE_FILE \
-    --stack-name $STACK_NAME
+    --stack-name $STACK_NAME \
+    --parameter-overrides \
+        pStateBucketName=$CFN_STATE_BUCKET

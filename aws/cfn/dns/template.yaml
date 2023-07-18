@@ -16,6 +16,18 @@ Resources:
       HostedZoneConfig:
         Comment: !Sub '${pDomainName} public DNS zone'
 
+  rCertificate:
+    Type: AWS::CertificateManager::Certificate
+    Properties:
+      CertificateTransparencyLoggingPreference: ENABLED
+      DomainName: !Sub '*.${pDomainName}'
+      SubjectAlternativeNames:
+        - !Ref pDomainName
+      DomainValidationOptions:
+        - DomainName: !Sub '*.${pDomainName}'
+          HostedZoneId: !Ref rDomainHostedZone
+      ValidationMethod: DNS
+
 Outputs:
 
   oDomainHostedZoneId:
@@ -27,3 +39,9 @@ Outputs:
   oDomainHostedZoneNameServers:
     Description: 'Hosted Zone Name Servers'
     Value: !Join [',', !GetAtt rDomainHostedZone.NameServers]
+
+  oCertificateArn:
+    Description: 'ACM Certificate ARN'
+    Value: !Ref rCertificate
+    Export:
+      Name: !Sub '${AWS::StackName}-CertificateArn'

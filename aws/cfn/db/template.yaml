@@ -1,0 +1,182 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: 'Database setup for Cruddur application'
+
+Parameters:
+
+  pAppId:
+    Description: Application ID
+    Type: String
+    Default: cruddur
+
+  pAppEnvironment:
+    Description: Application environment (e.g. dev, prod)
+    Type: String
+
+  pParentVPCStack:
+    Description: 'SSM Parameter that holds stack name of the parent VPC stack'
+    Type: AWS::SSM::Parameter::Value<String>
+
+  pDBMasterUsername:
+    Description: 'The master user name for the DB instance.'
+    Type: String
+    Default: administrator
+
+  pDBBackupRetentionPeriod:
+    Description: 'The number of days to keep snapshots of the cluster.'
+    Type: Number
+    MinValue: 1
+    MaxValue: 35
+    Default: 30
+
+  pDBPort:
+    Description: 'The port number on which the database accepts connections'
+    Type: Number
+    Default: 5432
+
+Resources:
+
+  rDBInstance:
+    Type: AWS::RDS::DBInstance
+    DeletionPolicy: Snapshot
+    UpdateReplacePolicy: Snapshot
+    Properties:
+      #DBName: "String"
+      #
+      # DB Instance Configuration
+      #
+      # rDBMonitoringRole.AssumeRolePolicyDocument.Condition must be manually updated if DBInstanceIdentifier value is changed
+      DBInstanceIdentifier: !Sub '${pAppId}-${pAppEnvironment}-db'
+      DBInstanceClass: db.t4g.micro
+      DeletionProtection: false
+      AvailabilityZone: !Select [ 0, !GetAZs '' ]
+      MultiAZ: false
+      #
+      # DB Engine Configuration
+      #
+      Engine: postgres
+      EngineVersion: 15.3
+      AllowMajorVersionUpgrade: false
+      AutoMinorVersionUpgrade: true
+      DBParameterGroupName: !Ref rDBParameterGroup
+      OptionGroupName: !Ref rOptionGroup
+      #
+      # Storage
+      #
+      AllocatedStorage: 20
+      MaxAllocatedStorage: 25
+      StorageType: gp2
+      StorageEncrypted: true
+      KmsKeyId: !Sub 'arn:${AWS::Partition}:kms:${AWS::Region}:${AWS::AccountId}:alias/aws/rds'
+      BackupRetentionPeriod: !Ref pDBBackupRetentionPeriod
+      CopyTagsToSnapshot: true
+      DeleteAutomatedBackups: true
+      PreferredBackupWindow: '09:40-10:10'
+      #
+      # Database Authentication
+      #
+      EnableIAMDatabaseAuthentication: true
+      ManageMasterUserPassword: true
+      MasterUsername: !Ref pDBMasterUsername
+      #
+      # Logging / Monitoring
+      #
+      EnableCloudwatchLogsExports:
+        - postgresql
+        - upgrade
+      EnablePerformanceInsights: true
+      PerformanceInsightsRetentionPeriod: 7
+      PerformanceInsightsKMSKeyId: !Sub 'arn:${AWS::Partition}:kms:${AWS::Region}:${AWS::AccountId}:alias/aws/rds'
+      MonitoringInterval: 60
+      MonitoringRoleArn: !GetAtt rDBMonitoringRole.Arn
+      #
+      # Connectivity
+      #
+      DBSubnetGroupName: !Ref rDBSubnetGroup
+      NetworkType: IPV4
+      PubliclyAccessible: false
+      Port: !Ref pDBPort
+      VPCSecurityGroups:
+        - !Ref rDBSecurityGroup
+
+  rDBParameterGroup:
+    Type: AWS::RDS::DBParameterGroup
+    Properties:
+      DBParameterGroupName: !Sub '${pAppId}-${pAppEnvironment}-postgres15'
+      Description: !Sub '${pAppId}-${pAppEnvironment} parameter group for postgres15'
+      Family: postgres15
+      #Parameters:
+
+  rOptionGroup:
+    Type: AWS::RDS::OptionGroup
+    # Option group gets associated with snapshots and cannot be deleted until all the snapshots are removed
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      OptionGroupName: !Sub '${pAppId}-${pAppEnvironment}-db-option-group'
+      OptionGroupDescription: !Sub '${pAppId}-${pAppEnvironment} option group for postgres 15'
+      EngineName: postgres
+      MajorEngineVersion: 15
+      #OptionConfigurations:
+
+  rDBSubnetGroup:
+    Type: AWS::RDS::DBSubnetGroup
+    Properties:
+      DBSubnetGroupDescription: !Sub '${pAppId}-${pAppEnvironment}-db private subnet group'
+      DBSubnetGroupName: !Sub '${pAppId}-${pAppEnvironment}-db-subnet-group'
+      SubnetIds: !Split [',', {'Fn::ImportValue': !Sub '${pParentVPCStack}-PrivateSubnets'}]
+
+  rDBSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: !Sub '${pAppId}-${pAppEnvironment}-db-sg'
+      GroupDescription: !Sub 'Security Group for ${pAppId}-${pAppEnvironment}-db'
+      VpcId: {'Fn::ImportValue': !Sub '${pParentVPCStack}-VPCId'}
+
+  rDBMonitoringRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub '${pAppId}-${pAppEnvironment}-rds-monitoring-role'
+      Description: 'Allow RDS Enhanced Monitoring to send metrics to Amazon CloudWatch Logs'
+      Path: /
+      ManagedPolicyArns:
+        - 'arn:aws:iam::aws:policy/service-role/AmazonRDSEnhancedMonitoringRole'
+      # aws:SourceArn is a circular dependency on the ARN of the rDBInstance resource
+      # this will break if we start using auto generated rDBInstance.DBInstanceIdentifier
+      AssumeRolePolicyDocument: !Sub |
+        {
+            "Version": "2012-10-17",
+            "Statement": [
+                {
+                    "Effect": "Allow",
+                    "Action": "sts:AssumeRole",
+                    "Principal": {
+                        "Service": "monitoring.rds.amazonaws.com"
+                    },
+                    "Condition": {
+                        "ArnEquals": {
+                            "aws:SourceArn": "arn:${AWS::Partition}:rds:${AWS::Region}:${AWS::AccountId}:db:${pAppId}-${pAppEnvironment}-db"
+                        }
+                    }
+                }
+            ]
+        }
+
+Outputs:
+
+  oEndpointAddress:
+    Description: 'The connection endpoint for the database'
+    Value: !GetAtt rDBInstance.Endpoint.Address
+    Export:
+      Name: !Sub '${AWS::StackName}-EndpointAddress'
+
+  oEndpointPort:
+    Description: 'The port number on which the database accepts connections'
+    Value: !GetAtt rDBInstance.Endpoint.Port
+    Export:
+      Name: !Sub '${AWS::StackName}-EndpointPort'
+
+  oSecurityGroupId:
+    Description: 'The GroupId of the VPC security group assigned to the DB instance'
+    Value: !GetAtt rDBSecurityGroup.GroupId
+    Export:
+      Name: !Sub '${AWS::StackName}-SecurityGroupId'

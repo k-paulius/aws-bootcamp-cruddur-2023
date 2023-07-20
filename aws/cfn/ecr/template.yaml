@@ -1,0 +1,63 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: 'Amazon ECR setup for Cruddur application'
+
+Parameters:
+
+  pAppId:
+    Description: Application ID
+    Type: String
+    Default: cruddur
+
+  pAppEnvironment:
+    Description: Application environment (e.g. dev, prod)
+    Type: String
+
+Resources:
+
+  rPythonRepository:
+    Type: AWS::ECR::Repository
+    Properties:
+      RepositoryName: !Sub '${pAppId}/${pAppEnvironment}/python'
+      ImageScanningConfiguration:
+        ScanOnPush: true
+      ImageTagMutability: IMMUTABLE
+      EncryptionConfiguration:
+        EncryptionType: KMS
+        KmsKey: !Sub 'arn:${AWS::Partition}:kms:${AWS::Region}:${AWS::AccountId}:alias/aws/ecr'
+
+  rBackendRepository:
+    Type: AWS::ECR::Repository
+    Properties:
+      RepositoryName: !Sub '${pAppId}/${pAppEnvironment}/backend'
+      ImageScanningConfiguration:
+        ScanOnPush: true
+      ImageTagMutability: IMMUTABLE
+      EncryptionConfiguration:
+        EncryptionType: KMS
+        KmsKey: !Sub 'arn:${AWS::Partition}:kms:${AWS::Region}:${AWS::AccountId}:alias/aws/ecr'
+
+Outputs:
+
+  oPythonRepositoryUri:
+    Description: 'Python repository URI'
+    Value: !GetAtt rPythonRepository.RepositoryUri
+    Export:
+      Name: !Sub '${AWS::StackName}-PythonRepositoryUri'
+
+  oPythonRepositoryArn:
+    Description: 'Python repository ARN'
+    Value: !GetAtt rPythonRepository.Arn
+    Export:
+      Name: !Sub '${AWS::StackName}-PythonRepositoryArn'
+
+  oBackendRepositoryUri:
+    Description: 'Backend repository URI'
+    Value: !GetAtt rBackendRepository.RepositoryUri
+    Export:
+      Name: !Sub '${AWS::StackName}-BackendRepositoryUri'
+
+  oBackendRepositoryArn:
+    Description: 'Backend repository ARN'
+    Value: !GetAtt rBackendRepository.Arn
+    Export:
+      Name: !Sub '${AWS::StackName}-BackendRepositoryArn'

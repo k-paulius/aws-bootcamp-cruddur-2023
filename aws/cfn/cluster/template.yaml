@@ -224,3 +224,11 @@ Resources:
       UnhealthyThresholdCount: 2
       Matcher:
         HttpCode: '200-299'
+
+Outputs:
+
+  oClusterArn:
+    Description: 'ARN of the Amazon ECS cluster'
+    Value: !GetAtt rFargateCluster.Arn
+    Export:
+      Name: !Sub '${AWS::StackName}-ClusterArn'

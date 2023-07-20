@@ -155,7 +155,7 @@ Resources:
       SslPolicy: 'ELBSecurityPolicy-TLS13-1-2-2021-06'
       DefaultActions:
         - Type: forward
-          TargetGroupArn:  !Ref rLoadBalancerFrontEndTargetGroup
+          TargetGroupArn:  !Ref rFrontendTargetGroup
 
   rHTTPSListenerRule:
     Type: AWS::ElasticLoadBalancingV2::ListenerRule
@@ -164,14 +164,14 @@ Resources:
       Priority: 1
       Actions:
         - Type: forward
-          TargetGroupArn:  !Ref rLoadBalancerBackEndTargetGroup
+          TargetGroupArn: !Ref rBackendTargetGroup
       Conditions:
         - Field: host-header
           HostHeaderConfig:
             Values:
               - !Sub 'api.${pAppDomainName}'
 
-  rLoadBalancerFrontEndTargetGroup:
+  rFrontendTargetGroup:
     Type: AWS::ElasticLoadBalancingV2::TargetGroup
     Properties:
       Name: !Sub '${pAppId}-${pAppEnvironment}-frontend-tg'
@@ -198,7 +198,7 @@ Resources:
       Matcher:
         HttpCode: '200-299'
 
-  rLoadBalancerBackEndTargetGroup:
+  rBackendTargetGroup:
     Type: AWS::ElasticLoadBalancingV2::TargetGroup
     Properties:
       Name: !Sub '${pAppId}-${pAppEnvironment}-backend-tg'
@@ -232,3 +232,15 @@ Outputs:
     Value: !GetAtt rFargateCluster.Arn
     Export:
       Name: !Sub '${AWS::StackName}-ClusterArn'
+
+  oBackendTargetGroupArn:
+    Description: 'ARN of the Backend target group'
+    Value: !GetAtt rBackendTargetGroup.TargetGroupArn
+    Export:
+      Name: !Sub '${AWS::StackName}-BackendTargetGroupArn'
+
+  oLoadBalancerSecurityGroupId:
+    Description: 'The GroupId of the VPC security group assigned to the ALB'
+    Value: !GetAtt rLoadBalancerSecurityGroup.GroupId
+    Export:
+      Name: !Sub '${AWS::StackName}-ALBSecurityGroupId'

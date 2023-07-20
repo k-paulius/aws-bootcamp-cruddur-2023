@@ -1,0 +1,270 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: 'Service setup for Cruddur application'
+
+Parameters:
+
+  pAppId:
+    Description: Application ID
+    Type: String
+    Default: cruddur
+
+  pAppEnvironment:
+    Description: Application environment (e.g. dev, prod)
+    Type: String
+
+  pParentECRStack:
+    Description: 'SSM Parameter that holds stack name of the parent ECR stack'
+    Type: AWS::SSM::Parameter::Value<String>
+
+  pParentClusterStack:
+    Description: 'SSM Parameter that holds stack name of the parent ECS cluster stack'
+    Type: AWS::SSM::Parameter::Value<String>
+
+  pParentVPCStack:
+    Description: 'SSM Parameter that holds stack name of the parent VPC stack'
+    Type: AWS::SSM::Parameter::Value<String>
+
+  pServiceName:
+    Description: 'Descriptive service name (e.g. backend, frontend)'
+    Type: String
+
+  pBackEndApplicationPort:
+    Description: 'Port back-end application is listening on'
+    Type: Number
+    Default: 4567
+
+Resources:
+
+  rBackendTaskDefinition:
+    Type: AWS::ECS::TaskDefinition
+    Properties:
+      Family: !Sub '${pAppId}-${pAppEnvironment}-${pServiceName}'
+      Cpu: 512
+      Memory: 1024
+      # Task Execution IAM Role
+      ExecutionRoleArn: !GetAtt rBackendTaskExecutionRole.Arn
+      # Task IAM Role
+      TaskRoleArn: !GetAtt rBackendTaskRole.Arn
+      NetworkMode: awsvpc
+      RequiresCompatibilities:
+        - FARGATE
+      RuntimePlatform:
+        CpuArchitecture: X86_64
+        OperatingSystemFamily: LINUX
+      ContainerDefinitions:
+        #
+        # X-Ray daemon container
+        #
+        - Name: xray-daemon
+          Image: 'public.ecr.aws/xray/aws-xray-daemon:3.x'
+          Essential: true
+          Cpu: 32
+          Memory: 256
+          User: 1337
+          PortMappings:
+            - Name: xray-port
+              ContainerPort: 2000
+              Protocol: udp
+        #
+        # Backend Flask application container
+        #
+        - Name: !Sub ${pServiceName}
+          Image: {'Fn::ImportValue': !Sub '${pParentECRStack}-BackendRepositoryUri'}
+          Essential: true
+          DependsOn:
+            - Condition: START
+              ContainerName: xray-daemon
+          MemoryReservation: 512
+          HealthCheck:
+            Command:
+              - 'CMD-SHELL'
+              - !Sub 'curl -f http://localhost:${pBackEndApplicationPort}/api/health-check || exit 1'
+            Interval: 30
+            Timeout: 5
+            Retries: 3
+            StartPeriod: 60
+          LogConfiguration:
+            LogDriver: awslogs
+            Options:
+              awslogs-group: !Ref rBackendLogGroup
+              awslogs-region: !Ref 'AWS::Region'
+              awslogs-stream-prefix: !Ref pServiceName
+          PortMappings:
+            - Name: !Ref pServiceName
+              ContainerPort: !Ref pBackEndApplicationPort
+              Protocol: tcp
+              AppProtocol: http
+          Secrets:
+            - Name: FRONTEND_URL
+              ValueFrom: !Sub 'arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${pAppId}/${pAppEnvironment}/frontend/origin'
+            - Name: BACKEND_URL
+              ValueFrom: !Sub 'arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${pAppId}/${pAppEnvironment}/backend/origin'
+            - Name: AWS_COGNITO_USER_POOL_ID
+              ValueFrom: !Sub 'arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${pAppId}/${pAppEnvironment}/aws/cognito/user-pool-id'
+            - Name: AWS_COGNITO_USER_POOL_CLIENT_ID
+              ValueFrom: !Sub 'arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${pAppId}/${pAppEnvironment}/aws/cognito/user-pool-client-id'
+            - Name: OTEL_SERVICE_NAME
+              ValueFrom: !Sub 'arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${pAppId}/${pAppEnvironment}/backend/otel/service-name'
+            - Name: OTEL_EXPORTER_OTLP_ENDPOINT
+              ValueFrom: !Sub 'arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${pAppId}/${pAppEnvironment}/backend/otel/exporter-otlp-endpoint'
+            - Name: OTEL_EXPORTER_OTLP_HEADERS
+              ValueFrom: !Sub 'arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${pAppId}/${pAppEnvironment}/backend/otel/exporter-otlp-headers'
+            - Name: ROLLBAR_ACCESS_TOKEN
+              ValueFrom: !Sub 'arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${pAppId}/${pAppEnvironment}/rollbar/access-token'
+
+  rBackendLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub '/${pAppId}/${pAppEnvironment}/${pServiceName}'
+      RetentionInDays: 14
+
+  rBackendTaskExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub '${pAppId}-${pAppEnvironment}-${pServiceName}-task-exec-role'
+      Description: !Sub 'Amazon ECS task execution role for ${pAppId}-${pAppEnvironment}-${pServiceName} task'
+      Path: /
+      Policies:
+        - PolicyName: !Sub '${pAppId}-${pAppEnvironment}-${pServiceName}-task-exec-policy'
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Sid: ECRAuthToken
+                Effect: Allow
+                Action:
+                  - ecr:GetAuthorizationToken
+                Resource: '*'
+              - Sid: ECRGetImage
+                Effect: Allow
+                Action:
+                  - ecr:BatchCheckLayerAvailability
+                  - ecr:GetDownloadUrlForLayer
+                  - ecr:BatchGetImage
+                Resource: {'Fn::ImportValue': !Sub '${pParentECRStack}-BackendRepositoryArn'}
+              - Sid: SSMGetParameters
+                Effect: Allow
+                Action:
+                  - ssm:GetParameters
+                  - ssm:GetParameter
+                Resource:
+                  - !Sub 'arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${pAppId}/${pAppEnvironment}/backend/*'
+                  - !Sub 'arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${pAppId}/${pAppEnvironment}/frontend/origin'
+                  - !Sub 'arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${pAppId}/${pAppEnvironment}/aws/cognito/user-pool-id'
+                  - !Sub 'arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${pAppId}/${pAppEnvironment}/aws/cognito/user-pool-client-id'
+                  - !Sub 'arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${pAppId}/${pAppEnvironment}/rollbar/access-token'
+              - Sid: PutCloudWatchLogEvents
+                Effect: Allow
+                Action:
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Resource: !GetAtt rBackendLogGroup.Arn
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: ecs-tasks.amazonaws.com
+            Action: sts:AssumeRole
+
+  rBackendTaskRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub '${pAppId}-${pAppEnvironment}-${pServiceName}-task-role'
+      Description: !Sub 'Amazon ECS task role for ${pAppId}-${pAppEnvironment}-${pServiceName} task'
+      Path: /
+      ManagedPolicyArns:
+        - 'arn:aws:iam::aws:policy/AWSXRayDaemonWriteAccess'
+      Policies:
+        - PolicyName: !Sub '${pAppId}-${pAppEnvironment}-${pServiceName}-task-policy'
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Sid: PutCloudWatchLogEvents
+                Effect: Allow
+                Action:
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Resource: !GetAtt rBackendLogGroup.Arn
+              - Sid: SessionManagerMessageGatewayService
+                Effect: Allow
+                Action:
+                  - ssmmessages:CreateControlChannel
+                  - ssmmessages:CreateDataChannel
+                  - ssmmessages:OpenControlChannel
+                  - ssmmessages:OpenDataChannel
+                Resource: '*'
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: ecs-tasks.amazonaws.com
+            Action: sts:AssumeRole
+            Condition:
+              ArnLike:
+                aws:SourceArn: !Sub 'arn:${AWS::Partition}:ecs:${AWS::Region}:${AWS::AccountId}:*'
+
+  rBackendECSService:
+    Type: AWS::ECS::Service
+    Properties:
+      ServiceName: !Ref pServiceName
+      Cluster: {'Fn::ImportValue': !Sub '${pParentClusterStack}-ClusterArn'}
+      EnableExecuteCommand: true
+      EnableECSManagedTags: true
+      PropagateTags: SERVICE
+      #
+      # Compute configuration
+      #
+      LaunchType: FARGATE
+      PlatformVersion: LATEST
+      #
+      # Deployment configuration
+      #
+      TaskDefinition: !Ref rBackendTaskDefinition
+      DeploymentController:
+        Type: ECS
+      DesiredCount: 1
+      SchedulingStrategy: REPLICA
+      DeploymentConfiguration:
+        MinimumHealthyPercent: 100
+        MaximumPercent: 200
+        DeploymentCircuitBreaker:
+          Enable: true
+          Rollback: true
+        #Alarms:
+      #
+      # Networking Configuration
+      #
+      NetworkConfiguration:
+        AwsvpcConfiguration:
+          AssignPublicIp: ENABLED
+          SecurityGroups:
+            - !GetAtt rBackendECSServiceSecurityGroup.GroupId
+          Subnets: !Split [',', {'Fn::ImportValue': !Sub '${pParentVPCStack}-PublicSubnets'}]
+      #
+      # Load balancing
+      #
+      LoadBalancers:
+        - ContainerName: !Sub ${pServiceName}
+          ContainerPort: !Ref pBackEndApplicationPort
+          TargetGroupArn: {'Fn::ImportValue': !Sub '${pParentClusterStack}-BackendTargetGroupArn'}
+      HealthCheckGracePeriodSeconds: 0
+      #
+      # Service Connect
+      #
+      ServiceConnectConfiguration:
+        Enabled: true
+        Namespace: !Sub ${pAppId}-${pAppEnvironment}
+        #LogConfiguration:
+        Services:
+          - DiscoveryName: !Ref pServiceName
+            PortName: !Ref pServiceName
+            ClientAliases:
+              - Port: !Ref pBackEndApplicationPort
+
+  rBackendECSServiceSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: !Sub 'Security Group for ${pAppId}-${pAppEnvironment}-${pServiceName} ECS service'
+      GroupName: !Sub '${pAppId}-${pAppEnvironment}-${pServiceName}-svc-sg'
+      VpcId: {'Fn::ImportValue': !Sub '${pParentVPCStack}-VPCId'}

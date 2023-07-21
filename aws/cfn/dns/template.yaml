@@ -36,6 +36,12 @@ Outputs:
     Export:
       Name: !Sub '${AWS::StackName}-HostedZoneId'
 
+  oHostedZoneName:
+    Description: 'Hosted Zone Name'
+    Value: !Ref pDomainName
+    Export:
+      Name: !Sub '${AWS::StackName}-HostedZoneName'
+
   oDomainHostedZoneNameServers:
     Description: 'Hosted Zone Name Servers'
     Value: !Join [',', !GetAtt rDomainHostedZone.NameServers]

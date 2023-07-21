@@ -31,8 +31,6 @@ from opentelemetry.sdk.trace.export import BatchSpanProcessor, ConsoleSpanExport
 from aws_xray_sdk.core import xray_recorder
 from aws_xray_sdk.ext.flask.middleware import XRayMiddleware
 
-# AWS CloudWatch Logs
-import watchtower
 import logging
 from time import strftime
 
@@ -45,9 +43,7 @@ from flask import got_request_exception
 LOGGER = logging.getLogger(__name__)
 LOGGER.setLevel(logging.DEBUG)
 console_handler = logging.StreamHandler()
-cw_handler = watchtower.CloudWatchLogHandler(log_group='backend_flask')
 LOGGER.addHandler(console_handler)
-LOGGER.addHandler(cw_handler)
 
 # Initialize tracing and an exporter that can send data to Honeycomb
 provider = TracerProvider()

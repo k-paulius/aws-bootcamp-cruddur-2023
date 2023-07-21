@@ -23,5 +23,7 @@ aws cloudformation deploy \
         pParentClusterStack=/$APP_ID/$APP_ENV/aws/cfn/cluster-stack-name \
         pParentVPCStack=/$APP_ID/$APP_ENV/aws/cfn/networking-stack-name \
         pParentDBStack=/$APP_ID/$APP_ENV/aws/cfn/db-stack-name \
+        pDNSStackName=/$APP_ID/$APP_ENV/aws/cfn/dns-stack-name \
         pServiceName=backend \
-        pBackEndApplicationPort=4567
+        pBackEndApplicationPort=4567 \
+        pSubDomainNameWithDot=api.

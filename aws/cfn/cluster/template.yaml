@@ -244,3 +244,15 @@ Outputs:
     Value: !GetAtt rLoadBalancerSecurityGroup.GroupId
     Export:
       Name: !Sub '${AWS::StackName}-ALBSecurityGroupId'
+
+  oLoadBalancerDNSName:
+    Description: 'The DNS name for the load balancer.'
+    Value: !GetAtt rLoadBalancer.DNSName
+    Export:
+      Name: !Sub '${AWS::StackName}-ALBDNSName'
+
+  oLoadBalancerCanonicalHostedZoneID:
+    Description: 'The ID of the Amazon Route 53 hosted zone associated with the load balancer.'
+    Value: !GetAtt rLoadBalancer.CanonicalHostedZoneID
+    Export:
+      Name: !Sub '${AWS::StackName}-ALBCanonicalHostedZoneID'

@@ -28,14 +28,22 @@ Parameters:
     Description: 'SSM Parameter that holds stack name of the parent DB stack'
     Type: AWS::SSM::Parameter::Value<String>
 
+  pDNSStackName:
+    Description: 'SSM Parameter that holds stack name of the parent DNS stack'
+    Type: AWS::SSM::Parameter::Value<String>
+
   pServiceName:
     Description: 'Descriptive service name (e.g. backend, frontend)'
     Type: String
 
   pBackEndApplicationPort:
-    Description: 'Port back-end application is listening on'
+    Description: 'Port backend application is listening on'
     Type: Number
     Default: 4567
+
+  pSubDomainNameWithDot:
+    Description: 'Backend application subdomain name with trailing dot (e.g. api.)'
+    Type: String
 
 Resources:
 
@@ -299,3 +307,17 @@ Resources:
       IpProtocol: tcp
       FromPort: {'Fn::ImportValue': !Sub '${pParentDBStack}-EndpointPort'}
       ToPort: {'Fn::ImportValue': !Sub '${pParentDBStack}-EndpointPort'}
+
+  rBackendRecordSet:
+    Type: AWS::Route53::RecordSet
+    Properties:
+      Name: !Sub
+        - '${SubDomainNameWithDot}${HostedZoneName}'
+        - SubDomainNameWithDot: !Ref pSubDomainNameWithDot
+          HostedZoneName: {'Fn::ImportValue': !Sub '${pDNSStackName}-HostedZoneName'}
+      Type: A
+      HostedZoneId: {'Fn::ImportValue': !Sub '${pDNSStackName}-HostedZoneId'}
+      AliasTarget:
+        DNSName: {'Fn::ImportValue': !Sub '${pParentClusterStack}-ALBDNSName'}
+        HostedZoneId: {'Fn::ImportValue': !Sub '${pParentClusterStack}-ALBCanonicalHostedZoneID'}
+        EvaluateTargetHealth: true

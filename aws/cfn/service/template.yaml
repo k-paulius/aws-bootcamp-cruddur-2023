@@ -297,5 +297,5 @@ Resources:
       Description: !Sub 'Allow IPv4 TCP from ${pServiceName} ECS service to RDS instance'
       SourceSecurityGroupId: !GetAtt rBackendECSServiceSecurityGroup.GroupId
       IpProtocol: tcp
-      FromPort: 5432
-      ToPort: 5432
+      FromPort: {'Fn::ImportValue': !Sub '${pParentDBStack}-EndpointPort'}
+      ToPort: {'Fn::ImportValue': !Sub '${pParentDBStack}-EndpointPort'}

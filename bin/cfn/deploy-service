@@ -22,5 +22,6 @@ aws cloudformation deploy \
         pParentECRStack=/$APP_ID/$APP_ENV/aws/cfn/ecr-stack-name \
         pParentClusterStack=/$APP_ID/$APP_ENV/aws/cfn/cluster-stack-name \
         pParentVPCStack=/$APP_ID/$APP_ENV/aws/cfn/networking-stack-name \
+        pParentDBStack=/$APP_ID/$APP_ENV/aws/cfn/db-stack-name \
         pServiceName=backend \
         pBackEndApplicationPort=4567

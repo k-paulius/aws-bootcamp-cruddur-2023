@@ -2,11 +2,7 @@ import json
 import boto3
 from boto3.dynamodb.conditions import Key, Attr
 
-dynamodb = boto3.resource(
-  'dynamodb',
-  region_name='us-east-1',
-  endpoint_url="http://dynamodb.us-east-1.amazonaws.com"
-)
+dynamodb = boto3.resource('dynamodb')
 
 def lambda_handler(event, context):
   print('event-data',event)
@@ -21,7 +17,7 @@ def lambda_handler(event, context):
     group_uuid = pk.replace("MSG#","")
     message = event['Records'][0]['dynamodb']['NewImage']['message']['S']
     print("GRUP ===>",group_uuid,message)
-    
+
     table_name = 'cruddur-messages'
     index_name = 'message-group-sk-index'
     table = dynamodb.Table(table_name)
@@ -30,12 +26,12 @@ def lambda_handler(event, context):
       KeyConditionExpression=Key('message_group_uuid').eq(group_uuid)
     )
     print("RESP ===>",data['Items'])
-    
+
     # recreate the message group rows with new SK value
     for i in data['Items']:
       delete_item = table.delete_item(Key={'pk': i['pk'], 'sk': i['sk']})
       print("DELETE ===>",delete_item)
-      
+
       response = table.put_item(
         Item={
           'pk': i['pk'],

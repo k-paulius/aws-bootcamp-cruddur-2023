@@ -1,20 +1,16 @@
 #!/usr/bin/env bash
 set -e
 
-DIR_PATH=$(dirname $(readlink -f $0))
+source config.sh
 CFN_TEMPLATE_FILE="$DIR_PATH/../../aws/cfn/ecr/template.yaml"
 
 cfn-lint $CFN_TEMPLATE_FILE
 
-APP_ID="cruddur"
-APP_ENV="prod"
-CFN_STATE_BUCKET=$(aws ssm get-parameter --name "/$APP_ID/$APP_ENV/aws/cfn/state-bucket-name" --query 'Parameter.Value' --output text)
-STACK_NAME=$(aws ssm get-parameter --name "/${APP_ID}/${APP_ENV}/aws/cfn/ecr-stack-name" --query 'Parameter.Value' --output text)
-
 aws cloudformation deploy \
     --template-file $CFN_TEMPLATE_FILE \
-    --stack-name $STACK_NAME \
+    --stack-name $ECR_STACK_NAME \
     --s3-bucket $CFN_STATE_BUCKET \
+    --s3-prefix=$CFN_S3_PREFIX \
     --parameter-overrides \
         pAppId=$APP_ID \
         pAppEnvironment=$APP_ENV

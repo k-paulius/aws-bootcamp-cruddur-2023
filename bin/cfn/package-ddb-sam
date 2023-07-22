@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+set -e
+
+source config.sh
+BUILT_TEMPLATE_PATH="$BUILD_DIR/ddb/.aws-sam/template.yaml"
+PACKAGED_TEMPLATE_PATH="$BUILD_DIR/ddb/.aws-sam/packaged.yaml"
+
+sam validate -t $BUILT_TEMPLATE_PATH
+cfn-lint $BUILT_TEMPLATE_PATH
+
+sam package \
+    --template-file $BUILT_TEMPLATE_PATH \
+    --output-template-file $PACKAGED_TEMPLATE_PATH \
+    --s3-bucket $CFN_STATE_BUCKET \
+    --s3-prefix "$SAM_S3_PREFIX/ddb"

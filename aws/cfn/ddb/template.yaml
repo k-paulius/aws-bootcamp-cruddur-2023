@@ -1,0 +1,124 @@
+AWSTemplateFormatVersion: 2010-09-09
+Transform: AWS::Serverless-2016-10-31
+Description: 'DynamoDB setup for Cruddur application'
+
+Parameters:
+
+  pAppId:
+    Description: Application ID
+    Type: String
+    Default: cruddur
+
+  pAppEnvironment:
+    Description: Application environment (e.g. dev, prod)
+    Type: String
+
+Resources:
+
+  rMessagesTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      # table name is hardcoded in a lot of places
+      TableName: cruddur-messages
+      AttributeDefinitions:
+        - AttributeName: message_group_uuid
+          AttributeType: S
+        - AttributeName: pk
+          AttributeType: S
+        - AttributeName: sk
+          AttributeType: S
+      KeySchema:
+        - AttributeName: pk
+          KeyType: HASH
+        - AttributeName: sk
+          KeyType: RANGE
+      GlobalSecondaryIndexes:
+        - IndexName: message-group-sk-index
+          KeySchema:
+            - AttributeName: message_group_uuid
+              KeyType: HASH
+            - AttributeName: sk
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+          ProvisionedThroughput:
+            ReadCapacityUnits: 5
+            WriteCapacityUnits: 5
+      BillingMode: PROVISIONED
+      DeletionProtectionEnabled: false
+      ProvisionedThroughput:
+        ReadCapacityUnits: 5
+        WriteCapacityUnits: 5
+      SSESpecification:
+        KMSMasterKeyId: !Sub 'arn:${AWS::Partition}:kms:${AWS::Region}:${AWS::AccountId}:alias/aws/dynamodb'
+        SSEEnabled: true
+        SSEType: KMS
+      StreamSpecification:
+        StreamViewType: NEW_IMAGE
+      TableClass: STANDARD
+
+  rMessageStreamFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub '${pAppId}-${pAppEnvironment}-message-stream'
+      Description: 'Process cruddur-messages DynamoDB table stream'
+      CodeUri: message-stream/
+      Handler: message-stream.lambda_handler
+      PackageType: Zip
+      Runtime: python3.9
+      Architectures:
+      - x86_64
+      MemorySize: 128
+      Timeout: 5
+      Role: !GetAtt rMessageStreamFunctionRole.Arn
+      Events:
+        DynamoDBStream:
+          Type: DynamoDB
+          Properties:
+            Stream: !GetAtt rMessagesTable.StreamArn
+            StartingPosition: LATEST
+            BatchSize: 1
+            Enabled: true
+
+  rMessageStreamFunctionLogGroup:
+    Type: AWS::Logs::LogGroup
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      LogGroupName: !Sub '/aws/lambda/${pAppId}-${pAppEnvironment}-message-stream'
+      RetentionInDays: 14
+
+  rMessageStreamFunctionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub '${pAppId}-${pAppEnvironment}-message-stream-role'
+      Description: !Sub '${pAppId}-${pAppEnvironment}-message-stream Lambda Execution Role'
+      Path: /
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: 'Allow'
+            Principal:
+              Service: 'lambda.amazonaws.com'
+            Action: 'sts:AssumeRole'
+      Policies:
+        - PolicyName: logs-access
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+            - Effect: Allow
+              Action:
+              - 'logs:CreateLogStream'
+              - 'logs:PutLogEvents'
+              Resource: !GetAtt 'rMessageStreamFunctionLogGroup.Arn'
+        - PolicyName: AWSLambdaInvocation-DynamoDB
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - dynamodb:DescribeStream
+                  - dynamodb:GetRecords
+                  - dynamodb:GetShardIterator
+                  - dynamodb:ListStreams
+                Resource: '*'

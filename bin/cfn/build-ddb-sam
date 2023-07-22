@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+set -e
+
+source config.sh
+TEMPLATE_PATH="$DIR_PATH/../../aws/cfn/ddb/template.yaml"
+BASE_DIR="$DIR_PATH/../../aws/lambdas"
+
+sam validate -t $TEMPLATE_PATH
+cfn-lint $TEMPLATE_PATH
+
+sam build \
+    --use-container \
+    --template $TEMPLATE_PATH \
+    --base-dir $BASE_DIR \
+    --build-dir "$BUILD_DIR/ddb/.aws-sam"

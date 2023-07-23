@@ -9,6 +9,7 @@ APP_ENV="prod"
 DB_PORT=5432
 FRONTEND_APP_PORT=3000
 BACKEND_APP_PORT=4567
+PRIMARY_DOMAIN=$(aws ssm get-parameter --name "/${APP_ID}/${APP_ENV}/domain-name" --query 'Parameter.Value' --output text)
 
 # Artifact Bucket Info
 CFN_STATE_BUCKET=$(aws ssm get-parameter --name "/$APP_ID/$APP_ENV/aws/cfn/state-bucket-name" --query 'Parameter.Value' --output text)

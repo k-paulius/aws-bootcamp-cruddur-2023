@@ -12,19 +12,10 @@ Parameters:
     Description: Application environment (e.g. dev, prod)
     Type: String
 
-  pFrontEndApplicationPort:
-    Description: 'Port front-end application is listening on'
-    Type: Number
-    Default: 3000
-
   pBackEndApplicationPort:
     Description: 'Port back-end application is listening on'
     Type: Number
     Default: 4567
-
-  pAppDomainName:
-    Description: 'SSM Parameter that holds applications domain name'
-    Type: AWS::SSM::Parameter::Value<String>
 
   pParentVPCStack:
     Description: 'SSM Parameter that holds stack name of the parent VPC stack'
@@ -155,48 +146,7 @@ Resources:
       SslPolicy: 'ELBSecurityPolicy-TLS13-1-2-2021-06'
       DefaultActions:
         - Type: forward
-          TargetGroupArn:  !Ref rFrontendTargetGroup
-
-  rHTTPSListenerRule:
-    Type: AWS::ElasticLoadBalancingV2::ListenerRule
-    Properties:
-      ListenerArn: !Ref rHTTPSListener
-      Priority: 1
-      Actions:
-        - Type: forward
-          TargetGroupArn: !Ref rBackendTargetGroup
-      Conditions:
-        - Field: host-header
-          HostHeaderConfig:
-            Values:
-              - !Sub 'api.${pAppDomainName}'
-
-  rFrontendTargetGroup:
-    Type: AWS::ElasticLoadBalancingV2::TargetGroup
-    Properties:
-      Name: !Sub '${pAppId}-${pAppEnvironment}-frontend-tg'
-      Protocol: HTTP
-      ProtocolVersion: HTTP2
-      IpAddressType: ipv4
-      Port: !Ref pFrontEndApplicationPort
-      VpcId: {'Fn::ImportValue': !Sub '${pParentVPCStack}-VPCId'}
-      TargetType: ip
-      TargetGroupAttributes:
-        - Key: deregistration_delay.timeout_seconds
-          Value: 0
-        - Key: load_balancing.cross_zone.enabled
-          Value: use_load_balancer_configuration
-      # HealthCheck
-      HealthCheckEnabled: true
-      HealthCheckIntervalSeconds: 15
-      HealthCheckProtocol: HTTP
-      HealthCheckPath: /
-      HealthCheckPort: traffic-port
-      HealthCheckTimeoutSeconds: 10
-      HealthyThresholdCount: 2
-      UnhealthyThresholdCount: 2
-      Matcher:
-        HttpCode: '200-299'
+          TargetGroupArn:  !Ref rBackendTargetGroup
 
   rBackendTargetGroup:
     Type: AWS::ElasticLoadBalancingV2::TargetGroup

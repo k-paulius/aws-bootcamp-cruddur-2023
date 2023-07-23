@@ -14,8 +14,6 @@ aws cloudformation deploy \
     --parameter-overrides \
         pAppId=$APP_ID \
         pAppEnvironment=$APP_ENV \
-        pFrontEndApplicationPort=$FRONTEND_APP_PORT \
         pBackEndApplicationPort=$BACKEND_APP_PORT \
-        pAppDomainName=/$APP_ID/$APP_ENV/domain-name \
         pParentVPCStack=$NETWORKING_STACK_NAME_SSM_PARAM \
         pDNSStackName=$DNS_STACK_NAME_SSM_PARAM

@@ -7,7 +7,6 @@ BUILD_DIR="$DIR_PATH/../../build"
 APP_ID="cruddur"
 APP_ENV="prod"
 DB_PORT=5432
-FRONTEND_APP_PORT=3000
 BACKEND_APP_PORT=4567
 PRIMARY_DOMAIN=$(aws ssm get-parameter --name "/${APP_ID}/${APP_ENV}/domain-name" --query 'Parameter.Value' --output text)
 

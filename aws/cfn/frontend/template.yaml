@@ -35,6 +35,27 @@ Resources:
           - ServerSideEncryptionByDefault:
               SSEAlgorithm: AES256
 
+  rWWWSubdomainBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub 'www.${rPrimaryDomainBucket}'
+      OwnershipControls:
+        Rules:
+          - ObjectOwnership: BucketOwnerEnforced
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+      WebsiteConfiguration:
+        RedirectAllRequestsTo:
+          HostName: !Ref rPrimaryDomainBucket
+          Protocol: https
+
   rPrimaryDomainBucketPolicy:
     Type: AWS::S3::BucketPolicy
     Properties:
@@ -48,6 +69,23 @@ Resources:
               Service: cloudfront.amazonaws.com
             Action: s3:GetObject
             Resource: !Sub '${rPrimaryDomainBucket.Arn}/*'
+            Condition:
+              ArnEquals:
+                AWS:SourceArn: !Sub 'arn:${AWS::Partition}:cloudfront::${AWS::AccountId}:distribution/${rDistribution}'
+
+  rWWWSubdomainBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref rWWWSubdomainBucket
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: AllowCloudFrontServicePrincipal
+            Effect: Allow
+            Principal:
+              Service: cloudfront.amazonaws.com
+            Action: s3:GetObject
+            Resource: !Sub '${rWWWSubdomainBucket.Arn}/*'
             Condition:
               ArnEquals:
                 AWS:SourceArn: !Sub 'arn:${AWS::Partition}:cloudfront::${AWS::AccountId}:distribution/${rDistribution}'
@@ -69,7 +107,8 @@ Resources:
         Comment: !Sub '${pAppId}-${pAppEnvironment} Frontend'
         Enabled: true
         Aliases:
-          - {'Fn::ImportValue': !Sub '${pDNSStackName}-HostedZoneName'}
+          - !Ref rPrimaryDomainBucket
+          - !Ref rWWWSubdomainBucket
         DefaultCacheBehavior:
           TargetOriginId: S3PrimaryDomainBucketOrigin
           Compress: true
@@ -107,12 +146,28 @@ Resources:
     Properties:
       HostedZoneId: {'Fn::ImportValue': !Sub '${pDNSStackName}-HostedZoneId'}
       RecordSets:
-        - Name: {'Fn::ImportValue': !Sub '${pDNSStackName}-HostedZoneName'}
+        - Name: !Ref rPrimaryDomainBucket
           Type: A
           AliasTarget:
             HostedZoneId: Z2FDTNDATAQYW2 # Magic CloudFront number
             DNSName: !GetAtt rDistribution.DomainName
-        - Name: {'Fn::ImportValue': !Sub '${pDNSStackName}-HostedZoneName'}
+        - Name: !Ref rPrimaryDomainBucket
+          Type: AAAA
+          AliasTarget:
+            HostedZoneId: Z2FDTNDATAQYW2 # Magic CloudFront number
+            DNSName: !GetAtt rDistribution.DomainName
+
+  rWWWSubdomainRecordSetGroup:
+    Type: AWS::Route53::RecordSetGroup
+    Properties:
+      HostedZoneId: {'Fn::ImportValue': !Sub '${pDNSStackName}-HostedZoneId'}
+      RecordSets:
+        - Name: !Ref rWWWSubdomainBucket
+          Type: A
+          AliasTarget:
+            HostedZoneId: Z2FDTNDATAQYW2 # Magic CloudFront number
+            DNSName: !GetAtt rDistribution.DomainName
+        - Name: !Ref rWWWSubdomainBucket
           Type: AAAA
           AliasTarget:
             HostedZoneId: Z2FDTNDATAQYW2 # Magic CloudFront number

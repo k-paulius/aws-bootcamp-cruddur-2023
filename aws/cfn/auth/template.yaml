@@ -1,0 +1,282 @@
+AWSTemplateFormatVersion: 2010-09-09
+Transform: AWS::Serverless-2016-10-31
+Description: 'Authentication setup for Cruddur application'
+
+Parameters:
+
+  pAppId:
+    Description: Application ID
+    Type: String
+    Default: cruddur
+
+  pAppEnvironment:
+    Description: Application environment (e.g. dev, prod)
+    Type: String
+
+  pParentVPCStack:
+    Description: 'SSM Parameter that holds stack name of the parent VPC stack'
+    Type: AWS::SSM::Parameter::Value<String>
+
+  pParentDBStack:
+    Description: 'SSM Parameter that holds stack name of the parent DB stack'
+    Type: AWS::SSM::Parameter::Value<String>
+
+Resources:
+
+  rUserPool:
+    Type: AWS::Cognito::UserPool
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      UserPoolName: !Sub '${pAppId}-${pAppEnvironment}-user-pool'
+      DeletionProtection: ACTIVE
+      # Cognito user pool sign-in options. Cannot be updated once the user pool has been created.
+      UsernameAttributes:
+        - email
+      AccountRecoverySetting:
+        RecoveryMechanisms:
+          - Name: verified_email
+            Priority: 1
+      AdminCreateUserConfig:
+        AllowAdminCreateUserOnly: false
+      AutoVerifiedAttributes:
+        - email
+      EmailConfiguration:
+        EmailSendingAccount: COGNITO_DEFAULT
+      Policies:
+        PasswordPolicy:
+          MinimumLength: 12
+          RequireLowercase: true
+          RequireNumbers: true
+          RequireSymbols: true
+          RequireUppercase: true
+          TemporaryPasswordValidityDays: 7
+      UserAttributeUpdateSettings:
+        AttributesRequireVerificationBeforeUpdate:
+          - email
+      UsernameConfiguration:
+        CaseSensitive: false
+      VerificationMessageTemplate:
+        DefaultEmailOption: CONFIRM_WITH_CODE
+      # Required attributes can't be changed once the user pool has been created.
+      Schema:
+        - Name: name
+          AttributeDataType: String
+          Mutable: true
+          Required: true
+        - Name: email
+          AttributeDataType: String
+          Mutable: true
+          Required: true
+        - Name: preferred_username
+          AttributeDataType: String
+          Mutable: true
+          Required: true
+      LambdaConfig:
+        PostConfirmation: !GetAtt rCognitoPostConfirmationFunction.Arn
+
+  rFrontendUserPoolClient:
+    Type: AWS::Cognito::UserPoolClient
+    Properties:
+      ClientName: !Sub '${pAppId}-${pAppEnvironment}-frontend-client'
+      UserPoolId: !Ref rUserPool
+      AccessTokenValidity: 60
+      AuthSessionValidity: 3
+      IdTokenValidity: 60
+      RefreshTokenValidity: 30
+      TokenValidityUnits:
+        AccessToken: minutes
+        IdToken: minutes
+        RefreshToken: days
+      AllowedOAuthFlowsUserPoolClient: false
+      EnablePropagateAdditionalUserContextData: false
+      EnableTokenRevocation: true
+      ExplicitAuthFlows:
+        - ALLOW_CUSTOM_AUTH
+        - ALLOW_REFRESH_TOKEN_AUTH
+        - ALLOW_USER_SRP_AUTH
+      GenerateSecret: false
+      PreventUserExistenceErrors: ENABLED
+      ReadAttributes:
+        - name
+        - email
+        - preferred_username
+      WriteAttributes:
+        - name
+        - email
+        - preferred_username
+      SupportedIdentityProviders:
+        - COGNITO
+
+  rBackendUserPoolClient:
+    Type: AWS::Cognito::UserPoolClient
+    Properties:
+      ClientName: !Sub '${pAppId}-${pAppEnvironment}-backend-client'
+      UserPoolId: !Ref rUserPool
+      AccessTokenValidity: 60
+      AuthSessionValidity: 3
+      IdTokenValidity: 60
+      RefreshTokenValidity: 30
+      TokenValidityUnits:
+        AccessToken: minutes
+        IdToken: minutes
+        RefreshToken: days
+      AllowedOAuthFlowsUserPoolClient: false
+      EnablePropagateAdditionalUserContextData: false
+      EnableTokenRevocation: true
+      ExplicitAuthFlows:
+        - ALLOW_CUSTOM_AUTH
+        - ALLOW_REFRESH_TOKEN_AUTH
+        - ALLOW_USER_SRP_AUTH
+      GenerateSecret: false
+      PreventUserExistenceErrors: ENABLED
+      ReadAttributes:
+        - name
+        - email
+        - preferred_username
+      WriteAttributes:
+        - name
+        - email
+        - preferred_username
+      SupportedIdentityProviders:
+        - COGNITO
+
+  rCognitoPostConfirmationFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub '${pAppId}-${pAppEnvironment}-cognito-post-confirmation'
+      Description: 'Process Cognito PostConfirmation event'
+      CodeUri: cognito-post-confirmation/
+      Handler: cognito-post-confirmation.lambda_handler
+      PackageType: Zip
+      Runtime: python3.9
+      Architectures:
+        - x86_64
+      MemorySize: 128
+      Timeout: 5
+      Role: !GetAtt rCognitoPostConfirmationFunctionRole.Arn
+      VpcConfig:
+        SecurityGroupIds:
+          - !Ref rCognitoPostConfirmationFunctionSecurityGroup
+        SubnetIds:
+          !Split [',', {'Fn::ImportValue': !Sub '${pParentVPCStack}-PublicSubnets'}]
+
+  rCognitoPostConfirmationFunctionPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !GetAtt rCognitoPostConfirmationFunction.Arn
+      Action: 'lambda:InvokeFunction'
+      Principal: 'cognito-idp.amazonaws.com'
+      SourceAccount: !Sub ${AWS::AccountId}
+      SourceArn: !GetAtt rUserPool.Arn
+
+  rCognitoPostConfirmationFunctionLogGroup:
+    Type: AWS::Logs::LogGroup
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      LogGroupName: !Sub '/aws/lambda/${pAppId}-${pAppEnvironment}-cognito-post-confirmation'
+      RetentionInDays: 14
+
+  rCognitoPostConfirmationFunctionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub '${pAppId}-${pAppEnvironment}-cognito-post-confirmation-role'
+      Description: !Sub '${pAppId}-${pAppEnvironment}-cognito-post-confirmation Lambda Execution Role'
+      Path: /
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: 'Allow'
+            Principal:
+              Service: 'lambda.amazonaws.com'
+            Action: 'sts:AssumeRole'
+      Policies:
+        - PolicyName: logs-access
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+            - Effect: Allow
+              Action:
+              - 'logs:CreateLogStream'
+              - 'logs:PutLogEvents'
+              Resource: !GetAtt 'rCognitoPostConfirmationFunctionLogGroup.Arn'
+        - PolicyName: vpc-access
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - ec2:CreateNetworkInterface
+                  - ec2:DeleteNetworkInterface
+                  - ec2:DescribeNetworkInterfaces
+                Resource: '*'
+
+  rCognitoPostConfirmationFunctionSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: !Sub 'Security Group for ${pAppId}-${pAppEnvironment}-cognito-post-confirmation function'
+      GroupName: !Sub '${pAppId}-${pAppEnvironment}-cognito-post-confirmation-sg'
+      VpcId: {'Fn::ImportValue': !Sub '${pParentVPCStack}-VPCId'}
+
+  # Modify DB security group to allow access from the Cognito post confirmation function
+  # DB security group is created as part of the database stack
+  rDBSecurityGroupInFromCognitoPostConfirmationFunction:
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties:
+      GroupId: {'Fn::ImportValue': !Sub '${pParentDBStack}-SecurityGroupId'}
+      Description: !Sub 'Allow TCP from ${pAppId}-${pAppEnvironment}-cognito-post-confirmation function'
+      SourceSecurityGroupId: !GetAtt rCognitoPostConfirmationFunctionSecurityGroup.GroupId
+      IpProtocol: tcp
+      FromPort: {'Fn::ImportValue': !Sub '${pParentDBStack}-EndpointPort'}
+      ToPort: {'Fn::ImportValue': !Sub '${pParentDBStack}-EndpointPort'}
+
+  rUserPoolIdParameter:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: !Sub '/${pAppId}/${pAppEnvironment}/aws/cognito/user-pool-id'
+      Description: 'Cognito User pool ID'
+      Value: !Ref rUserPool
+      Tier: Standard
+      Type: String
+      DataType: text
+
+  rFrontendUserPoolClientId:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: !Sub '/${pAppId}/${pAppEnvironment}/frontend/cognito-user-pool-client-id'
+      Description: 'Frontend Cognito User Pool Client ID'
+      Value: !Ref rFrontendUserPoolClient
+      Tier: Standard
+      Type: String
+      DataType: text
+
+  rBackendUserPoolClientId:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: !Sub '/${pAppId}/${pAppEnvironment}/backend/cognito-user-pool-client-id'
+      Description: 'Backend Cognito User Pool Client ID'
+      Value: !Ref rBackendUserPoolClient
+      Tier: Standard
+      Type: String
+      DataType: text
+
+Outputs:
+
+  oUserPoolId:
+    Description: 'User pool ID'
+    Value: !Ref rUserPool
+    Export:
+      Name: !Sub '${AWS::StackName}-UserPoolId'
+
+  oFrontendUserPoolClientId:
+    Description: 'Frontend user pool client ID'
+    Value: !Ref rFrontendUserPoolClient
+    Export:
+      Name: !Sub '${AWS::StackName}-FrontendUserPoolClientId'
+
+  oBackendUserPoolClientId:
+    Description: 'Backend user pool client ID'
+    Value: !Ref rBackendUserPoolClient
+    Export:
+      Name: !Sub '${AWS::StackName}-BackendUserPoolClientId'

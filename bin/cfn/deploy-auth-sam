@@ -1,0 +1,20 @@
+#!/usr/bin/env bash
+set -e
+
+source config.sh
+PACKAGED_TEMPLATE_PATH="$BUILD_DIR/auth/.aws-sam/packaged.yaml"
+
+sam validate -t $PACKAGED_TEMPLATE_PATH
+cfn-lint $PACKAGED_TEMPLATE_PATH
+
+sam deploy \
+    --template-file $PACKAGED_TEMPLATE_PATH \
+    --stack-name $AUTH_STACK_NAME \
+    --s3-bucket $CFN_STATE_BUCKET \
+    --s3-prefix $CFN_S3_PREFIX \
+    --capabilities "CAPABILITY_NAMED_IAM" \
+    --parameter-overrides \
+        pAppId=$APP_ID \
+        pAppEnvironment=$APP_ENV \
+        pParentVPCStack=$NETWORKING_STACK_NAME_SSM_PARAM \
+        pParentDBStack=$DB_STACK_NAME_SSM_PARAM

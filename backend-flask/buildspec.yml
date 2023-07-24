@@ -8,13 +8,13 @@ phases:
   pre_build:
     commands:
       - echo Logging in to Amazon ECR...
-      - REPOSITORY_SERVER=$ECR_AWS_REGION.dkr.ecr.$ECR_AWS_REGION.amazonaws.com
+      - REPOSITORY_SERVER=$ECR_AWS_ACCOUNT_ID.dkr.ecr.$ECR_AWS_REGION.amazonaws.com
       - aws ecr get-login-password --region $ECR_AWS_REGION | docker login --username AWS --password-stdin $REPOSITORY_SERVER
   build:
     commands:
       - echo Build started on `date`
       - echo Building the Docker image...
-      - docker build -t $IMAGE_REPO_NAME:$IMAGE_TAG -f "$CODEBUILD_SRC_DIR/backend-flask/Dockerfile.prod" --build-arg AWS_ACCOUNT_ID=$ECR_AWS_REGION $CODEBUILD_SRC_DIR/backend-flask
+      - docker build -t $IMAGE_REPO_NAME:$IMAGE_TAG -f "$CODEBUILD_SRC_DIR/backend-flask/Dockerfile.prod" --build-arg AWS_ACCOUNT_ID=$ECR_AWS_ACCOUNT_ID $CODEBUILD_SRC_DIR/backend-flask
       - docker tag $IMAGE_REPO_NAME:$IMAGE_TAG $REPOSITORY_SERVER/$IMAGE_REPO_NAME:$IMAGE_TAG
   post_build:
     commands:

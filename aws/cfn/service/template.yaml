@@ -285,11 +285,11 @@ Resources:
       VpcId: {'Fn::ImportValue': !Sub '${pParentVPCStack}-VPCId'}
 
   # Allow ALB to access ECS backend service
-  rBackendECSServiceSecurityGroupInFromALBIPv4:
+  rBackendECSServiceSecurityGroupInFromALB:
     Type: AWS::EC2::SecurityGroupIngress
     Properties:
       GroupId: !Ref rBackendECSServiceSecurityGroup
-      Description: !Sub 'Allow IPv4 TCP from ALB to ${pServiceName} ECS service'
+      Description: !Sub 'Allow TCP from ALB to ${pServiceName} ECS service'
       SourceSecurityGroupId: {'Fn::ImportValue': !Sub '${pParentClusterStack}-ALBSecurityGroupId'}
       IpProtocol: tcp
       FromPort: !Ref pBackEndApplicationPort
@@ -297,11 +297,11 @@ Resources:
 
   # Modify DB security group to allow access from the ECS backend service
   # DB security group is created as part of the database stack
-  rDBSecurityGroupInFromBackendServiceIPv4:
+  rDBSecurityGroupInFromBackendService:
     Type: AWS::EC2::SecurityGroupIngress
     Properties:
       GroupId: {'Fn::ImportValue': !Sub '${pParentDBStack}-SecurityGroupId'}
-      Description: !Sub 'Allow IPv4 TCP from ${pServiceName} ECS service to RDS instance'
+      Description: !Sub 'Allow TCP from ${pServiceName} ECS service to RDS instance'
       SourceSecurityGroupId: !GetAtt rBackendECSServiceSecurityGroup.GroupId
       IpProtocol: tcp
       FromPort: {'Fn::ImportValue': !Sub '${pParentDBStack}-EndpointPort'}

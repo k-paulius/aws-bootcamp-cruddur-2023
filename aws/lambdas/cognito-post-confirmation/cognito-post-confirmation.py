@@ -1,5 +1,9 @@
-import psycopg2
 import os
+import logging
+import psycopg2
+
+logger = logging.getLogger()
+logger.setLevel(logging.INFO)
 
 def lambda_handler(event, context):
     user = event['request']['userAttributes']
@@ -20,16 +24,16 @@ def lambda_handler(event, context):
           '{user['sub']}'
         )
       """
-      conn = psycopg2.connect(os.getenv('PROD_CONNECTION_URL'))
+      conn = psycopg2.connect(os.getenv('CONNECTION_URL'))
       cur = conn.cursor()
       cur.execute(sql)
       conn.commit()
 
     except (Exception, psycopg2.DatabaseError) as error:
-      print(error)
+      logger.ERROR(error)
     finally:
       if conn is not None:
           cur.close()
           conn.close()
-          print('Database connection closed.')
+          logger.info('Database connection closed')
     return event

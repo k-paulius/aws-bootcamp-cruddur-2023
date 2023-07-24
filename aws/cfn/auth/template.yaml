@@ -75,43 +75,10 @@ Resources:
       LambdaConfig:
         PostConfirmation: !GetAtt rCognitoPostConfirmationFunction.Arn
 
-  rFrontendUserPoolClient:
+  rUserPoolClient:
     Type: AWS::Cognito::UserPoolClient
     Properties:
-      ClientName: !Sub '${pAppId}-${pAppEnvironment}-frontend-client'
-      UserPoolId: !Ref rUserPool
-      AccessTokenValidity: 60
-      AuthSessionValidity: 3
-      IdTokenValidity: 60
-      RefreshTokenValidity: 30
-      TokenValidityUnits:
-        AccessToken: minutes
-        IdToken: minutes
-        RefreshToken: days
-      AllowedOAuthFlowsUserPoolClient: false
-      EnablePropagateAdditionalUserContextData: false
-      EnableTokenRevocation: true
-      ExplicitAuthFlows:
-        - ALLOW_CUSTOM_AUTH
-        - ALLOW_REFRESH_TOKEN_AUTH
-        - ALLOW_USER_SRP_AUTH
-      GenerateSecret: false
-      PreventUserExistenceErrors: ENABLED
-      ReadAttributes:
-        - name
-        - email
-        - preferred_username
-      WriteAttributes:
-        - name
-        - email
-        - preferred_username
-      SupportedIdentityProviders:
-        - COGNITO
-
-  rBackendUserPoolClient:
-    Type: AWS::Cognito::UserPoolClient
-    Properties:
-      ClientName: !Sub '${pAppId}-${pAppEnvironment}-backend-client'
+      ClientName: !Sub '${pAppId}-${pAppEnvironment}-client'
       UserPoolId: !Ref rUserPool
       AccessTokenValidity: 60
       AuthSessionValidity: 3
@@ -241,22 +208,12 @@ Resources:
       Type: String
       DataType: text
 
-  rFrontendUserPoolClientId:
+  rUserPoolClientIdParameter:
     Type: AWS::SSM::Parameter
     Properties:
-      Name: !Sub '/${pAppId}/${pAppEnvironment}/frontend/cognito-user-pool-client-id'
-      Description: 'Frontend Cognito User Pool Client ID'
-      Value: !Ref rFrontendUserPoolClient
-      Tier: Standard
-      Type: String
-      DataType: text
-
-  rBackendUserPoolClientId:
-    Type: AWS::SSM::Parameter
-    Properties:
-      Name: !Sub '/${pAppId}/${pAppEnvironment}/backend/cognito-user-pool-client-id'
-      Description: 'Backend Cognito User Pool Client ID'
-      Value: !Ref rBackendUserPoolClient
+      Name: !Sub '/${pAppId}/${pAppEnvironment}/aws/cognito/user-pool-client-id'
+      Description: 'Cognito User Pool Client ID'
+      Value: !Ref rUserPoolClient
       Tier: Standard
       Type: String
       DataType: text
@@ -269,14 +226,8 @@ Outputs:
     Export:
       Name: !Sub '${AWS::StackName}-UserPoolId'
 
-  oFrontendUserPoolClientId:
-    Description: 'Frontend user pool client ID'
-    Value: !Ref rFrontendUserPoolClient
+  oUserPoolClientId:
+    Description: 'Cognito user pool client ID'
+    Value: !Ref rUserPoolClient
     Export:
-      Name: !Sub '${AWS::StackName}-FrontendUserPoolClientId'
-
-  oBackendUserPoolClientId:
-    Description: 'Backend user pool client ID'
-    Value: !Ref rBackendUserPoolClient
-    Export:
-      Name: !Sub '${AWS::StackName}-BackendUserPoolClientId'
+      Name: !Sub '${AWS::StackName}-UserPoolClientId'

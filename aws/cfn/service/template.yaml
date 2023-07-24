@@ -116,7 +116,7 @@ Resources:
             - Name: AWS_COGNITO_USER_POOL_ID
               ValueFrom: !Sub 'arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${pAppId}/${pAppEnvironment}/aws/cognito/user-pool-id'
             - Name: AWS_COGNITO_USER_POOL_CLIENT_ID
-              ValueFrom: !Sub 'arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${pAppId}/${pAppEnvironment}/backend/cognito-user-pool-client-id'
+              ValueFrom: !Sub 'arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${pAppId}/${pAppEnvironment}/aws/cognito/user-pool-client-id'
             - Name: OTEL_SERVICE_NAME
               ValueFrom: !Sub 'arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${pAppId}/${pAppEnvironment}/backend/otel/service-name'
             - Name: OTEL_EXPORTER_OTLP_ENDPOINT
@@ -166,6 +166,7 @@ Resources:
                   - !Sub 'arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${pAppId}/${pAppEnvironment}/backend/*'
                   - !Sub 'arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${pAppId}/${pAppEnvironment}/frontend/origin'
                   - !Sub 'arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${pAppId}/${pAppEnvironment}/aws/cognito/user-pool-id'
+                  - !Sub 'arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${pAppId}/${pAppEnvironment}/aws/cognito/user-pool-client-id'
                   - !Sub 'arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${pAppId}/${pAppEnvironment}/rollbar/access-token'
               - Sid: PutCloudWatchLogEvents
                 Effect: Allow

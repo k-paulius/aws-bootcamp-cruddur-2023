@@ -2,12 +2,14 @@
 # Build Image
 #
 ARG AWS_ACCOUNT_ID
-FROM ${AWS_ACCOUNT_ID}.dkr.ecr.us-east-1.amazonaws.com/cruddur-python:3.10-slim-bullseye as build
+ARG ECR_AWS_REGION
+ARG PYTHON_REPO_NAME
+FROM ${AWS_ACCOUNT_ID}.dkr.ecr.${ECR_AWS_REGION}.amazonaws.com/${PYTHON_REPO_NAME}:3.10-slim-bullseye as build
 
 # install extra packages
 RUN apt-get update; \
     apt-get install -y --no-install-recommends \
-	      build-essential gcc 
+	      build-essential gcc
 
 WORKDIR /usr/app
 RUN python -m venv /usr/app/venv
@@ -20,7 +22,7 @@ RUN pip3 install -r requirements.txt
 # Production Image
 #
 # pin base image to a minor version for stability
-FROM ${AWS_ACCOUNT_ID}.dkr.ecr.us-east-1.amazonaws.com/cruddur-python:3.10-slim-bullseye
+FROM ${AWS_ACCOUNT_ID}.dkr.ecr.${ECR_AWS_REGION}.amazonaws.com/${PYTHON_REPO_NAME}:3.10-slim-bullseye
 
 # create user "python"
 RUN set -eux; \

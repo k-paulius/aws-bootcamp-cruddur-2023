@@ -140,6 +140,10 @@ Resources:
           AcmCertificateArn: {'Fn::ImportValue': !Sub '${pDNSStackName}-CertificateArn'}
           MinimumProtocolVersion: 'TLSv1.2_2021'
           SslSupportMethod: 'sni-only'
+        CustomErrorResponses:
+          - ErrorCode: 403
+            ResponseCode: 200
+            ResponsePagePath: /index.html
 
   rPrimaryDomainRecordSetGroup:
     Type: AWS::Route53::RecordSetGroup

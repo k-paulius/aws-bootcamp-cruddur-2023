@@ -2,12 +2,14 @@ import './ActivityForm.css';
 import React from "react";
 import process from 'process';
 import {ReactComponent as BombIcon} from './svg/bomb.svg';
+import {post} from '../lib/Requests';
+import FormErrors from 'components/FormErrors';
 
 export default function ActivityForm(props) {
   const [count, setCount] = React.useState(0);
   const [message, setMessage] = React.useState('');
   const [ttl, setTtl] = React.useState('7-days');
-  const [errors, setErrors] = React.useState('');
+  const [errors, setErrors] = React.useState([]);
 
   const classes = []
   classes.push('count')
@@ -17,48 +19,20 @@ export default function ActivityForm(props) {
 
   const onsubmit = async (event) => {
     event.preventDefault();
-    setErrors('')
-    try {
-      const backend_url = `${process.env.REACT_APP_BACKEND_URL}/api/activities`
-      console.log('onsubmit payload', message)
-      const res = await fetch(backend_url, {
-        method: "POST",
-        headers: {
-          'Accept': 'application/json',
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem("access_token")}`
-        },
-        body: JSON.stringify({
-          message: message,
-          ttl: ttl
-        }),
-      });
-      let data = await res.json();
-      if (res.status === 200) {
-        // add activity to the feed
-        props.setActivities(current => [data,...current]);
-        // reset and close the form
-        setCount(0)
-        setMessage('')
-        setTtl('7-days')
-        props.setPopped(false)
-      } else {
-        console.log(res)
-        if (res.status === 422) {
-          if (data[0] === 'NoAuthorizationHeader' || data[0] === 'Unauthenticated') {
-            setErrors('You must be logged in to post messages!')
-          } else if (data[0] === 'BlankMessage') {
-            setErrors('Please enter the message!')
-          } else if (data[0] === 'MessageExceedMaxChars') {
-            setErrors('Message exceeded 280 character limit!')
-          } else if (data[0] === 'BlankTtl') {
-            setErrors('Please specify message TTL!')
-          }
-        }
-      }
-    } catch (err) {
-      console.log(err);
+    const url = `${process.env.REACT_APP_BACKEND_URL}/api/activities`
+    const payload_data = {
+      message: message,
+      ttl: ttl
     }
+    post(url,payload_data,setErrors,function(data){
+      // add activity to the feed
+      props.setActivities(current => [data,...current]);
+      // reset and close the form
+      setCount(0)
+      setMessage('')
+      setTtl('7-days')
+      props.setPopped(false)
+    })
   }
 
   const textarea_onchange = (event) => {
@@ -106,6 +80,7 @@ export default function ActivityForm(props) {
               <option value='1-hour'>1 hour </option>
             </select>
           </div>
+          <FormErrors errors={errors} />
         </div>
       </form>
     );

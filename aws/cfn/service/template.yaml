@@ -321,3 +321,23 @@ Resources:
         DNSName: {'Fn::ImportValue': !Sub '${pParentClusterStack}-ALBDNSName'}
         HostedZoneId: {'Fn::ImportValue': !Sub '${pParentClusterStack}-ALBCanonicalHostedZoneID'}
         EvaluateTargetHealth: true
+
+Outputs:
+
+  oBackendECSServiceName:
+    Description: 'Backend ECS Service Name'
+    Value: !Ref rBackendECSService
+    Export:
+      Name: !Sub '${AWS::StackName}-BackendECSServiceName'
+
+  oBackendTaskRoleArn:
+    Description: 'Backend Task IAM Role Arn'
+    Value: !GetAtt rBackendTaskRole.Arn
+    Export:
+      Name: !Sub '${AWS::StackName}-BackendTaskRoleArn'
+
+  oBackendTaskExecutionRoleArn:
+    Description: 'Backend Task Execution IAM Role Arn'
+    Value: !GetAtt rBackendTaskExecutionRole.Arn
+    Export:
+      Name: !Sub '${AWS::StackName}-BackendTaskExecutionRoleArn'

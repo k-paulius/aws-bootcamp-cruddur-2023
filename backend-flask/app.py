@@ -62,7 +62,7 @@ xray_recorder.configure(service='backend-flask', dynamic_naming=xray_url)
 app = Flask(__name__)
 
 cognito_jwt_token = CognitoJwtToken(
-  user_pool_id=os.getenv("AWS_COGNITO_USER_POOL_ID"), 
+  user_pool_id=os.getenv("AWS_COGNITO_USER_POOL_ID"),
   user_pool_client_id=os.getenv("AWS_COGNITO_USER_POOL_CLIENT_ID"),
   region=os.getenv("AWS_DEFAULT_REGION")
 )
@@ -77,9 +77,9 @@ frontend = os.getenv('FRONTEND_URL')
 backend = os.getenv('BACKEND_URL')
 origins = [frontend, backend]
 cors = CORS(
-  app, 
+  app,
   resources={r"/api/*": {"origins": origins}},
-  headers=['Content-Type', 'Authorization'], 
+  headers=['Content-Type', 'Authorization'],
   expose_headers='Authorization',
   methods="OPTIONS,GET,HEAD,POST"
 )
@@ -92,21 +92,21 @@ def after_request(response):
 
 # Rollbar
 rollbar_access_token = os.getenv('ROLLBAR_ACCESS_TOKEN')
-@app.before_first_request
-def init_rollbar():
-    """init rollbar module"""
-    rollbar.init(
-        # access token
-        rollbar_access_token,
-        # environment name
-        'development',
-        # server root directory, makes tracebacks prettier
-        root=os.path.dirname(os.path.realpath(__file__)),
-        # flask already sets up logging
-        allow_logging_basic_config=False)
+with app.app_context():
+  def init_rollbar():
+      """init rollbar module"""
+      rollbar.init(
+          # access token
+          rollbar_access_token,
+          # environment name
+          'development',
+          # server root directory, makes tracebacks prettier
+          root=os.path.dirname(os.path.realpath(__file__)),
+          # flask already sets up logging
+          allow_logging_basic_config=False)
 
-    # send exceptions from `app` to rollbar, using flask's signal system.
-    got_request_exception.connect(rollbar.contrib.flask.report_exception, app)    
+      # send exceptions from `app` to rollbar, using flask's signal system.
+      got_request_exception.connect(rollbar.contrib.flask.report_exception, app)
 
 @app.route("/api/message_groups", methods=['GET'])
 def data_message_groups():

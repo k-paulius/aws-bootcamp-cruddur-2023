@@ -4,7 +4,7 @@ from lib.db import db
 
 
 class CreateActivity:
-    def run(cognito_user_id, message, ttl):
+    def run(message, cognito_user_id, ttl):
         model = {
             'errors': None,
             'data': None

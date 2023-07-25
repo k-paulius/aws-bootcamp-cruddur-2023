@@ -32,15 +32,17 @@ init_cors(app)
 with app.app_context():
   g.rollbar = init_rollbar(app)
 
-@app.route("/api/message_groups", methods=['GET'])
-@jwt_required()
-def data_message_groups():
-  model = MessageGroups.run(cognito_user_id=g.cognito_user_id)
-
+def model_json(model):
   if model['errors'] is not None:
     return model['errors'], 422
   else:
     return model['data'], 200
+
+@app.route("/api/message_groups", methods=['GET'])
+@jwt_required()
+def data_message_groups():
+  model = MessageGroups.run(cognito_user_id=g.cognito_user_id)
+  return model_json(model)
 
 @app.route("/api/messages/<string:message_group_uuid>", methods=['GET'])
 @jwt_required()
@@ -49,12 +51,7 @@ def data_messages(message_group_uuid):
       cognito_user_id=g.cognito_user_id,
       message_group_uuid=message_group_uuid
     )
-
-  if model['errors'] is not None:
-    return model['errors'], 422
-  else:
-    return model['data'], 200
-
+  return model_json(model)
 
 @app.route("/api/messages", methods=['POST','OPTIONS'])
 @cross_origin()
@@ -80,11 +77,7 @@ def data_create_message():
       message_group_uuid=message_group_uuid,
       cognito_user_id=g.cognito_user_id
     )
-
-  if model['errors'] is not None:
-    return model['errors'], 422
-  else:
-    return model['data'], 200
+  return model_json(model)
 
 def default_home_feed(e):
   # unauthenticated request
@@ -109,31 +102,20 @@ def data_notifications():
 @xray_recorder.capture('user.activities')
 def data_handle(handle):
   model = UserActivities.run(handle)
-  if model['errors'] is not None:
-    return model['errors'], 422
-  else:
-    return model['data'], 200
+  return model_json(model)
 
 @app.route("/api/activities/search", methods=['GET'])
 def data_search():
   term = request.args.get('term')
   model = SearchActivities.run(term)
-  if model['errors'] is not None:
-    return model['errors'], 422
-  else:
-    return model['data'], 200
-  return
+  return model_json(model)
 
 @app.route("/api/activities", methods=['POST','OPTIONS'])
 @cross_origin()
 @jwt_required()
 def data_activities():
   model = CreateActivity.run(g.cognito_user_id, request.json['message'], request.json['ttl'])
-
-  if model['errors'] is not None:
-    return model['errors'], 422
-  else:
-    return model['data'], 200
+  return model_json(model)
 
 @app.route("/api/activities/<string:activity_uuid>", methods=['GET'])
 def data_show_activity(activity_uuid):
@@ -146,11 +128,7 @@ def data_activities_reply(activity_uuid):
   user_handle  = 'dr_badger'
   message = request.json['message']
   model = CreateReply.run(message, user_handle, activity_uuid)
-  if model['errors'] is not None:
-    return model['errors'], 422
-  else:
-    return model['data'], 200
-  return
+  return model_json(model)
 
 @app.route('/api/health-check')
 def health_check():
@@ -172,11 +150,7 @@ def data_update_profile():
     bio=bio,
     display_name=display_name
   )
-
-  if model['errors'] is not None:
-    return model['errors'], 422
-  else:
-    return model['data'], 200
+  return model_json(model)
 
 if __name__ == "__main__":
   app.run(debug=True)

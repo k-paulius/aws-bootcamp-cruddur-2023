@@ -1,5 +1,4 @@
 import { Auth } from 'aws-amplify';
-import { resolvePath } from 'react-router-dom';
 
 export async function getAccessToken(){
   Auth.currentSession()
@@ -12,10 +11,10 @@ export async function getAccessToken(){
 
 export async function checkAuth(setUser){
   Auth.currentAuthenticatedUser({
-    // Optional, By default is false. 
-    // If set to true, this call will send a 
+    // Optional, By default is false.
+    // If set to true, this call will send a
     // request to Cognito to get the latest user data
-    bypassCache: false 
+    bypassCache: false
   })
   .then((cognito_user) => {
     setUser({

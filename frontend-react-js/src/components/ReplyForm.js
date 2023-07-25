@@ -1,7 +1,6 @@
 import './ReplyForm.css';
 import React from "react";
 import process from 'process';
-import {ReactComponent as BombIcon} from './svg/bomb.svg';
 
 import ActivityContent  from '../components/ActivityContent';
 
@@ -73,7 +72,7 @@ export default function ReplyForm(props) {
             <div className="activity_wrap">
               {content}
             </div>
-            <form 
+            <form
               className='replies_form'
               onSubmit={onsubmit}
             >
@@ -81,7 +80,7 @@ export default function ReplyForm(props) {
                 type="text"
                 placeholder="what is your reply?"
                 value={message}
-                onChange={textarea_onchange} 
+                onChange={textarea_onchange}
               />
               <div className='submit'>
                 <div className={classes.join(' ')}>{240-count}</div>

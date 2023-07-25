@@ -5,7 +5,6 @@ import { Link } from "react-router-dom";
 import { Auth } from 'aws-amplify';
 
 // [TODO] Authenication
-import Cookies from 'js-cookie'
 
 export default function SigninPage() {
 
@@ -23,7 +22,7 @@ export default function SigninPage() {
       window.location.href = "/"
     })
     .catch(error => {
-      if (error.code == 'UserNotConfirmedException') {
+      if (error.code === 'UserNotConfirmedException') {
         window.location.href = "/confirm"
       }
       setErrors(error.message)
@@ -49,7 +48,7 @@ export default function SigninPage() {
         <Logo className='logo' />
       </div>
       <div className='signin-wrapper'>
-        <form 
+        <form
           className='signin_form'
           onSubmit={onsubmit}
         >
@@ -60,7 +59,7 @@ export default function SigninPage() {
               <input
                 type="text"
                 value={email}
-                onChange={email_onchange} 
+                onChange={email_onchange}
               />
             </div>
             <div className='field text_field password'>
@@ -68,7 +67,7 @@ export default function SigninPage() {
               <input
                 type="password"
                 value={password}
-                onChange={password_onchange} 
+                onChange={password_onchange}
               />
             </div>
           </div>

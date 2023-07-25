@@ -45,13 +45,13 @@ export default function ActivityForm(props) {
       } else {
         console.log(res)
         if (res.status === 422) {
-          if (data[0] == 'NoAuthorizationHeader' || data[0] == 'Unauthenticated') {
+          if (data[0] === 'NoAuthorizationHeader' || data[0] === 'Unauthenticated') {
             setErrors('You must be logged in to post messages!')
-          } else if (data[0] == 'BlankMessage') {
+          } else if (data[0] === 'BlankMessage') {
             setErrors('Please enter the message!')
-          } else if (data[0] == 'MessageExceedMaxChars') {
+          } else if (data[0] === 'MessageExceedMaxChars') {
             setErrors('Message exceeded 280 character limit!')
-          } else if (data[0] == 'BlankTtl') {
+          } else if (data[0] === 'BlankTtl') {
             setErrors('Please specify message TTL!')
           }
         }
@@ -77,7 +77,7 @@ export default function ActivityForm(props) {
 
   if (props.popped === true) {
     return (
-      <form 
+      <form
         className='activity_form'
         onSubmit={onsubmit}
       >
@@ -85,7 +85,7 @@ export default function ActivityForm(props) {
           type="text"
           placeholder="what would you like to say?"
           value={message}
-          onChange={textarea_onchange} 
+          onChange={textarea_onchange}
         />
         {el_errors}
         <div className='submit'>
@@ -95,7 +95,7 @@ export default function ActivityForm(props) {
             <BombIcon className='icon' />
             <select
               value={ttl}
-              onChange={ttl_onchange} 
+              onChange={ttl_onchange}
             >
               <option value='30-days'>30 days</option>
               <option value='7-days'>7 days</option>

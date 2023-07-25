@@ -23,7 +23,7 @@ export default function ProfileInfo(props) {
 
   const classes = () => {
     let classes = ["profile-info-wrapper"];
-    if (popped == true){
+    if (popped === true){
       classes.push('popped');
     }
     return classes.join(' ');
@@ -32,7 +32,7 @@ export default function ProfileInfo(props) {
   return (
     <div className={classes()}>
       <div className="profile-dialog">
-        <button onClick={signOut}>Sign Out</button> 
+        <button onClick={signOut}>Sign Out</button>
       </div>
       <div className="profile-info" onClick={click_pop}>
         <ProfileAvatar id={props.user.cognito_user_uuid} />

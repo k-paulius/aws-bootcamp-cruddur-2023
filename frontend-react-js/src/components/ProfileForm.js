@@ -43,9 +43,7 @@ export default function ProfileForm(props) {
   const s3upload = async (event)=> {
     const file = event.target.files[0]
     const filename = file.name
-    const size = file.size
     const type = file.type
-    const preview_image_url = URL.createObjectURL(file)
     const fileparts = filename.split('.')
     const extension = fileparts[fileparts.length-1]
     const presignedurl = await s3uploadkey(extension)
@@ -84,7 +82,6 @@ export default function ProfileForm(props) {
           display_name: displayName
         }),
       });
-      let data = await res.json();
       if (res.status === 200) {
         setBio(null)
         setDisplayName(null)
@@ -114,7 +111,7 @@ export default function ProfileForm(props) {
   if (props.popped === true) {
     return (
       <div className="popup_form_wrap profile_popup" onClick={close}>
-        <form 
+        <form
           className='profile_form popup_form'
           onSubmit={onsubmit}
         >
@@ -132,7 +129,7 @@ export default function ProfileForm(props) {
                 type="text"
                 placeholder="Display Name"
                 value={displayName}
-                onChange={display_name_onchange} 
+                onChange={display_name_onchange}
               />
             </div>
             <div className="field bio">
@@ -140,7 +137,7 @@ export default function ProfileForm(props) {
               <textarea
                 placeholder="Bio"
                 value={bio}
-                onChange={bio_onchange} 
+                onChange={bio_onchange}
               />
             </div>
           </div>

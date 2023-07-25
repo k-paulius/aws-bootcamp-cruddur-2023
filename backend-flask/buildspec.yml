@@ -22,7 +22,7 @@ phases:
       - echo Pushing the Docker image...
       - docker push $REPOSITORY_SERVER/$IMAGE_REPO_NAME:$IMAGE_TAG
       - echo Writing image definitions file...
-      - printf "[{\"name\":\"$IMAGE_REPO_NAME\",\"imageUri\":\"$REPOSITORY_SERVER/$IMAGE_REPO_NAME:$IMAGE_TAG\"}]" > imagedefinitions.json
+      - printf "[{\"name\":\"backend\",\"imageUri\":\"$REPOSITORY_SERVER/$IMAGE_REPO_NAME:$IMAGE_TAG\"}]" > imagedefinitions.json
 
 artifacts:
     files:

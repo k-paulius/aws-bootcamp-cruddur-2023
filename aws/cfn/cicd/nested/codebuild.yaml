@@ -1,0 +1,127 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: 'CodeBuild Project for baking Cruddur application container images'
+
+Parameters:
+
+  pAppId:
+    Description: Application ID
+    Type: String
+    Default: cruddur
+
+  pAppEnvironment:
+    Description: Application environment (e.g. dev, prod)
+    Type: String
+
+  pParentECRStack:
+     Description: 'SSM Parameter that holds stack name of the parent ECR stack'
+     Type: AWS::SSM::Parameter::Value<String>
+
+  pArtifactBucketArn:
+    Description: 'Artifact Bucket Arn'
+    Type: String
+
+Resources:
+
+  rCodeBuildProjectLogGroup:
+    Type: AWS::Logs::LogGroup
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      LogGroupName: !Sub '/${pAppId}/${pAppEnvironment}/codebuild/${pAppId}-${pAppEnvironment}-backend-image-build'
+      RetentionInDays: 14
+
+  rCodeBuildProjectRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub '${pAppId}-${pAppEnvironment}-backend-image-build-role'
+      Description: !Sub '${pAppId}-${pAppEnvironment}-backend-image-build CodeBuild project service role'
+      Path: /
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: codebuild.amazonaws.com
+            Action: sts:AssumeRole
+            Condition:
+              ArnEquals:
+                AWS:SourceArn: !Sub 'arn:${AWS::Partition}:codebuild:${AWS::Region}:${AWS::AccountId}:project/${pAppId}-${pAppEnvironment}-backend-image-build'
+      Policies:
+        - PolicyName: logs-access
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                - logs:CreateLogStream
+                - logs:PutLogEvents
+                Resource: !GetAtt 'rCodeBuildProjectLogGroup.Arn'
+        - PolicyName: 'artifact-bucket-access'
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - s3:GetObject
+                  - s3:PutObject
+                Resource: !Sub '${pArtifactBucketArn}/*'
+        - PolicyName: 'ecr-access'
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Sid: ECRAuthToken
+                Effect: Allow
+                Action:
+                  - ecr:GetAuthorizationToken
+                Resource: '*'
+              - Sid: ECRPutImage
+                Effect: Allow
+                Action:
+                  - ecr:BatchCheckLayerAvailability
+                  - ecr:CompleteLayerUpload
+                  - ecr:InitiateLayerUpload
+                  - ecr:PutImage
+                  - ecr:UploadLayerPart
+                Resource: {'Fn::ImportValue': !Sub '${pParentECRStack}-BackendRepositoryArn'}
+              - Sid: ECRGetImage
+                Effect: Allow
+                Action:
+                  - ecr:BatchGetImage
+                  - ecr:GetDownloadUrlForLayer
+                Resource: {'Fn::ImportValue': !Sub '${pParentECRStack}-PythonRepositoryArn'}
+
+  rCodeBuildProject:
+    Type: AWS::CodeBuild::Project
+    Properties:
+      Name: !Sub '${pAppId}-${pAppEnvironment}-backend-image-build'
+      Description: !Sub 'Builds container image for ${pAppId}-${pAppEnvironment}-backend application'
+      Artifacts:
+        Type: CODEPIPELINE
+      BadgeEnabled: false
+      ConcurrentBuildLimit: 1
+      Environment:
+        ComputeType: BUILD_GENERAL1_SMALL
+        Image: 'aws/codebuild/standard:7.0'
+        PrivilegedMode: true
+        Type: LINUX_CONTAINER
+      LogsConfig:
+        CloudWatchLogs:
+          GroupName: !Ref rCodeBuildProjectLogGroup
+          Status: ENABLED
+      QueuedTimeoutInMinutes: 120
+      TimeoutInMinutes: 30
+      ServiceRole: !GetAtt rCodeBuildProjectRole.Arn
+      Source:
+        Type: CODEPIPELINE
+        BuildSpec: 'backend-flask/buildspec.yml'
+      Visibility: PRIVATE
+
+Outputs:
+
+  oCodeBuildProjectName:
+    Description: 'CodeBuild Project Name'
+    Value: !Ref rCodeBuildProject
+
+  oCodeBuildProjectArn:
+    Description: 'CodeBuild Project Arn'
+    Value: !GetAtt rCodeBuildProject.Arn

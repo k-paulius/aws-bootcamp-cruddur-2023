@@ -1,0 +1,240 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: 'CI/CD pipeline setup for Cruddur application'
+
+Parameters:
+
+  pAppId:
+    Description: Application ID
+    Type: String
+    Default: cruddur
+
+  pAppEnvironment:
+    Description: Application environment (e.g. dev, prod)
+    Type: String
+
+  pParentECRStack:
+     Description: 'SSM Parameter that holds stack name of the parent ECR stack'
+     Type: AWS::SSM::Parameter::Value<String>
+
+  pParentECRStackAsString:
+    Description: 'Name of the SSM Parameter that holds stack name of the parent ECR stack'
+    Type: String
+
+  pParentClusterStack:
+    Description: 'SSM Parameter that holds stack name of the parent ECS cluster stack'
+    Type: AWS::SSM::Parameter::Value<String>
+
+  pParentServiceStack:
+    Description: 'SSM Parameter that holds stack name of the parent ECS service stack'
+    Type: AWS::SSM::Parameter::Value<String>
+
+  pArtifactBucketName:
+    Description: 'The S3 bucket where artifacts for the pipeline are stored'
+    Type: String
+
+  pCodeStarConnection:
+    Description: 'CodeStar Connection ARN'
+    Type: String
+
+  pGitHubRepoName:
+    Description: 'Name of the GitHub Repository'
+    Type: String
+
+  pGitHubBranchName:
+    Description: 'Name of the GitHub branch'
+    Type: String
+
+Metadata:
+
+  cfn-lint:
+    config:
+      ignore_checks:
+        - W3002
+
+Resources:
+
+  rCodeBuildStack:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: nested/codebuild.yaml
+      Parameters:
+        pAppId: !Ref pAppId
+        pAppEnvironment: !Ref pAppEnvironment
+        pArtifactBucketArn: !GetAtt rArtifactBucket.Arn
+        pParentECRStack: !Ref pParentECRStackAsString
+
+  rArtifactBucket:
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Ref pArtifactBucketName
+      OwnershipControls:
+        Rules:
+          - ObjectOwnership: BucketOwnerEnforced
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      VersioningConfiguration:
+        Status: Suspended
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: 'aws:kms'
+              KMSMasterKeyID: !Sub 'arn:${AWS::Partition}:kms:${AWS::Region}:${AWS::AccountId}:alias/aws/s3'
+            BucketKeyEnabled: true
+
+  rPipelineRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub '${pAppId}-${pAppEnvironment}-backend-pipeline-role'
+      Description: !Sub '${pAppId}-${pAppEnvironment}-backend CodePipeline Execution Role'
+      Path: /
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: codepipeline.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: 'codestar-connections-access'
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+            - Effect: Allow
+              Action:
+                - codestar-connections:UseConnection
+              Resource: !Ref pCodeStarConnection
+        - PolicyName: 'artifact-bucket-access'
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+            - Effect: Allow
+              Action:
+                - s3:GetObject
+                - s3:PutObject
+              Resource: !Sub '${rArtifactBucket.Arn}/*'
+        - PolicyName: 'codebuild-access'
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+            - Effect: Allow
+              Action:
+                - codebuild:StartBuild
+                - codebuild:BatchGetBuilds
+              Resource: !GetAtt rCodeBuildStack.Outputs.oCodeBuildProjectArn
+        - PolicyName: 'ecs-access'
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+            - Effect: Allow
+              Action:
+                - ecs:DescribeServices
+                - ecs:DescribeTaskDefinition
+                - ecs:DescribeTasks
+                - ecs:ListTasks
+                - ecs:RegisterTaskDefinition
+                - ecs:TagResource
+                - ecs:UpdateService
+              Resource: '*'
+        - PolicyName: 'ecs-task-passrole'
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - iam:GetRole
+                  - iam:PassRole
+                Resource:
+                  - {'Fn::ImportValue': !Sub '${pParentServiceStack}-BackendTaskRoleArn'}
+                  - {'Fn::ImportValue': !Sub '${pParentServiceStack}-BackendTaskExecutionRoleArn'}
+
+  rPipeline:
+    Type: AWS::CodePipeline::Pipeline
+    Properties:
+      Name: !Sub '${pAppId}-${pAppEnvironment}-backend'
+      ArtifactStore:
+        Location: !Ref rArtifactBucket
+        Type: S3
+        EncryptionKey:
+          Id: !Sub 'arn:${AWS::Partition}:kms:${AWS::Region}:${AWS::AccountId}:alias/aws/s3'
+          Type: KMS
+      RestartExecutionOnUpdate: false
+      RoleArn: !GetAtt rPipelineRole.Arn
+      Stages:
+        - Name: Source
+          Actions:
+            - Name: clone-repository
+              RunOrder: 1
+              ActionTypeId:
+                Category: Source
+                Owner: AWS
+                Provider: CodeStarSourceConnection
+                Version: 1
+              OutputArtifacts:
+                - Name: SourceArtifact
+              Configuration:
+                ConnectionArn: !Ref pCodeStarConnection
+                FullRepositoryId: !Ref pGitHubRepoName
+                BranchName: !Ref pGitHubBranchName
+                OutputArtifactFormat: "CODE_ZIP"
+        - Name: Build
+          Actions:
+            - Name: build-backend-image
+              RunOrder: 1
+              ActionTypeId:
+                Category: Build
+                Owner: AWS
+                Provider: CodeBuild
+                Version: 1
+              InputArtifacts:
+                - Name: SourceArtifact
+              OutputArtifacts:
+                - Name: ImageDefinition
+              Configuration:
+                ProjectName: !GetAtt rCodeBuildStack.Outputs.oCodeBuildProjectName
+                BatchEnabled: false
+                EnvironmentVariables:
+                  Fn::Join:
+                    - ''
+                    - - '['
+                      - '  {'
+                      - '      "name": "ECR_AWS_ACCOUNT_ID",'
+                      - !Sub '      "value": "${AWS::AccountId}",'
+                      - '      "type": "PLAINTEXT"'
+                      - '  },'
+                      - '  {'
+                      - '      "name": "ECR_AWS_REGION",'
+                      - !Sub '      "value": "${AWS::Region}",'
+                      - '      "type": "PLAINTEXT"'
+                      - '  },'
+                      - '  {'
+                      - '      "name": "IMAGE_REPO_NAME",'
+                      - !Join ['', [ '"value": "', {'Fn::ImportValue': !Sub '${pParentECRStack}-BackendRepositoryName'}, '",']]
+                      - '      "type": "PLAINTEXT"'
+                      - '  },'
+                      - '  {'
+                      - '      "name": "PYTHON_REPO_NAME",'
+                      - !Join ['', [ '"value": "', {'Fn::ImportValue': !Sub '${pParentECRStack}-PythonRepositoryName'}, '",']]
+                      - '      "type": "PLAINTEXT"'
+                      - '  }'
+                      - ']'
+        # https://docs.aws.amazon.com/codepipeline/latest/userguide/action-reference-ECS.html
+        - Name: Deploy
+          Actions:
+            - Name: deploy-backend
+              RunOrder: 1
+              ActionTypeId:
+                Category: Deploy
+                Owner: AWS
+                Provider: ECS
+                Version: 1
+              InputArtifacts:
+                - Name: ImageDefinition
+              Configuration:
+                DeploymentTimeout: 10
+                ClusterName: {'Fn::ImportValue': !Sub '${pParentClusterStack}-ClusterArn'}
+                ServiceName: {'Fn::ImportValue': !Sub '${pParentServiceStack}-BackendECSServiceName'}

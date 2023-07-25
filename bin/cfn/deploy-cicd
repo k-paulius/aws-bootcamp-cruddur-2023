@@ -1,0 +1,35 @@
+#!/usr/bin/env bash
+set -e
+
+source config.sh
+CFN_TEMPLATE_FILE="$DIR_PATH/../../aws/cfn/cicd/template.yaml"
+PACKAGED_TEMPLATE_FILE="$BUILD_DIR/cicd-packaged.yaml"
+
+cfn-lint $CFN_TEMPLATE_FILE
+cfn-lint "$DIR_PATH/../../aws/cfn/cicd/nested/codebuild.yaml"
+
+aws cloudformation package \
+    --template-file $CFN_TEMPLATE_FILE \
+    --s3-bucket $CFN_STATE_BUCKET \
+    --s3-prefix=$CFN_S3_PREFIX \
+    --output-template-file "$PACKAGED_TEMPLATE_FILE"
+
+cfn-lint $PACKAGED_TEMPLATE_FILE
+
+aws cloudformation deploy \
+    --template-file $PACKAGED_TEMPLATE_FILE \
+    --stack-name $CICD_STACK_NAME \
+    --s3-bucket $CFN_STATE_BUCKET \
+    --s3-prefix=$CFN_S3_PREFIX \
+    --capabilities CAPABILITY_NAMED_IAM \
+    --parameter-overrides \
+        pAppId=$APP_ID \
+        pAppEnvironment=$APP_ENV \
+        pParentECRStack=$ECR_STACK_NAME_SSM_PARAM \
+        pParentECRStackAsString=$ECR_STACK_NAME_SSM_PARAM \
+        pParentClusterStack=$CLUSTER_STACK_NAME_SSM_PARAM \
+        pParentServiceStack=$SERVICE_STACK_NAME_SSM_PARAM \
+        pArtifactBucketName=$ARTIFACT_BUCKET_NAME \
+        pCodeStarConnection=$(aws ssm get-parameter --name "/${APP_ID}/${APP_ENV}/cicd/github-codestar-connection-arn" --query 'Parameter.Value' --output text) \
+        pGitHubRepoName=$(aws ssm get-parameter --name "/${APP_ID}/${APP_ENV}/cicd/github-repo-name" --query 'Parameter.Value' --output text) \
+        pGitHubBranchName=$(aws ssm get-parameter --name "/${APP_ID}/${APP_ENV}/cicd/github-branch-name" --query 'Parameter.Value' --output text)

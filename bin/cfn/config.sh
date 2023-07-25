@@ -14,6 +14,7 @@ PRIMARY_DOMAIN=$(aws ssm get-parameter --name "/${APP_ID}/${APP_ENV}/domain-name
 CFN_STATE_BUCKET=$(aws ssm get-parameter --name "/$APP_ID/$APP_ENV/aws/cfn/state-bucket-name" --query 'Parameter.Value' --output text)
 CFN_S3_PREFIX="cfn"
 SAM_S3_PREFIX="sam"
+ARTIFACT_BUCKET_NAME=$(aws ssm get-parameter --name "/$APP_ID/$APP_ENV/cicd/artifact-bucket-name" --query 'Parameter.Value' --output text)
 
 # Stack Name SSM Parameters
 NETWORKING_STACK_NAME_SSM_PARAM="/${APP_ID}/${APP_ENV}/aws/cfn/networking-stack-name"
@@ -25,6 +26,7 @@ SERVICE_STACK_NAME_SSM_PARAM="/${APP_ID}/${APP_ENV}/aws/cfn/service-stack-name"
 DDB_STACK_NAME_SSM_PARAM="/${APP_ID}/${APP_ENV}/aws/cfn/ddb-stack-name"
 FRONTEND_STACK_NAME_SSM_PARAM="/${APP_ID}/${APP_ENV}/aws/cfn/frontend-stack-name"
 AUTH_STACK_NAME_SSM_PARAM="/${APP_ID}/${APP_ENV}/aws/cfn/auth-stack-name"
+CICD_STACK_NAME_SSM_PARAM="/${APP_ID}/${APP_ENV}/aws/cfn/cicd-stack-name"
 
 # Stack Names
 CFN_STATE_BUCKET_STACK_NAME="$APP_ID-$APP_ENV-cfn-state-bucket"
@@ -37,3 +39,4 @@ SERVICE_STACK_NAME=$(aws ssm get-parameter --name $SERVICE_STACK_NAME_SSM_PARAM 
 DDB_STACK_NAME=$(aws ssm get-parameter --name $DDB_STACK_NAME_SSM_PARAM --query 'Parameter.Value' --output text)
 FRONTEND_STACK_NAME=$(aws ssm get-parameter --name $FRONTEND_STACK_NAME_SSM_PARAM --query 'Parameter.Value' --output text)
 AUTH_STACK_NAME=$(aws ssm get-parameter --name $AUTH_STACK_NAME_SSM_PARAM --query 'Parameter.Value' --output text)
+CICD_STACK_NAME=$(aws ssm get-parameter --name $CICD_STACK_NAME_SSM_PARAM --query 'Parameter.Value' --output text)

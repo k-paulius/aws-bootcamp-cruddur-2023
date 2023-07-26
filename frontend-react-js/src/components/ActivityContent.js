@@ -1,6 +1,6 @@
 import './ActivityContent.css';
 
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { format_datetime, time_ago, time_future } from '../lib/DateTimeFormats';
 import {ReactComponent as BombIcon} from './svg/bomb.svg';
 
@@ -13,9 +13,21 @@ export default function ActivityContent(props) {
                   </div>
 
   }
+  const navigate = useNavigate()
+
+  const onclick = (event) => {
+    event.preventDefault()
+    const url = `/@${props.activity.handle}/status/${props.activity.uuid}`
+    navigate(url)
+    return false;
+  }
+
+  const attrs = {}
+  attrs.className = 'activity_content_wrap clickable'
+  attrs.onClick = onclick
 
   return (
-    <div className='activity_content_wrap'>
+    <div {...attrs}>
       <Link className='activity_avatar'to={`/@`+props.activity.handle} ></Link>
       <div className='activity_content'>
         <div className='activity_meta'>

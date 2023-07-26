@@ -4,7 +4,7 @@ import ActivityItem from './ActivityItem';
 
 export default function Replies(props) {
   let content;
-  if (props.replies.length === 0){
+  if (!Array.isArray(props.replies) || props.replies.length === 0){
     content = <div className='replies_primer'>
       <span>Nothing to see here yet</span>
     </div>

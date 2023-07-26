@@ -14,7 +14,7 @@ export default function ActivityShowItem(props) {
   if (props.activity.expires_at) {
     expires_at = <div className="expires_at" title={format_datetime(props.activity.expires_at)}>
                     <BombIcon className='icon' />
-                    <span className='ago'>{time_ago(props.activity.expires_at)}</span>
+                    <span className='ago'>{time_future(props.activity.expires_at)}</span>
                   </div>
 
   }

@@ -22,6 +22,8 @@ export default function FormErrorItem(props) {
           return "The message cannot be blank"
         case 'message_exceed_max_chars_1024':
           return "The message is too long, It should be less than 1024 characters"
+        case 'failed_to_persist_crud':
+          return "Failed to create Crud"
         // Users
         case 'message_group_uuid_blank':
           return "The message group cannot be blank"

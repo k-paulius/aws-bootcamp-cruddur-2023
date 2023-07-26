@@ -1,9 +1,9 @@
 import boto3
-import sys
-from datetime import datetime, timedelta, timezone
+from datetime import datetime
 import uuid
 import os
 import botocore.exceptions
+from flask import current_app as app
 
 class Ddb:
   def client():
@@ -27,12 +27,11 @@ class Ddb:
         ':pk': {'S': f"GRP#{my_user_uuid}"}
       }
     }
-    print('query-params:',query_params)
-    print(query_params)
+    app.logger.debug('query-params:',query_params)
+    app.logger.debug(query_params)
     # query the table
     response = client.query(**query_params)
     items = response['Items']
-
 
     results = []
     for item in items:
@@ -92,8 +91,7 @@ class Ddb:
       TableName=table_name,
       Item=record
     )
-    # print the response
-    print(response)
+    app.logger.error(response)
     return {
       'message_group_uuid': message_group_uuid,
       'uuid': my_user_uuid,
@@ -156,4 +154,4 @@ class Ddb:
         'message_group_uuid': message_group_uuid
       }
     except botocore.exceptions.ClientError as e:
-      print(e)
+      app.logger.error(e)

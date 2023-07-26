@@ -3,6 +3,7 @@ import React from "react";
 import {ReactComponent as Logo} from '../components/svg/logo.svg';
 import { Link } from "react-router-dom";
 import { Auth } from 'aws-amplify';
+import FormErrors from 'components/FormErrors';
 
 export default function RecoverPage() {
   // Username is Eamil
@@ -18,7 +19,7 @@ export default function RecoverPage() {
     setErrors([])
     Auth.forgotPassword(username)
     .then((data) => setFormState('confirm_code') )
-    .catch((err) => setErrors(err.message) );
+    .catch((err) => setErrors([err.message]) );
     return false
   }
 
@@ -28,9 +29,9 @@ export default function RecoverPage() {
     if (password === passwordAgain){
       Auth.forgotPasswordSubmit(username, code, password)
       .then((data) => setFormState('success'))
-      .catch((err) => setErrors(err.message) );
+      .catch((err) => setErrors([err.message]) );
     } else {
-      setErrors('Passwords do not match')
+      setErrors(['Passwords do not match'])
     }
     return false
   }
@@ -46,11 +47,6 @@ export default function RecoverPage() {
   }
   const code_onchange = (event) => {
     setCode(event.target.value);
-  }
-
-  let el_errors;
-  if (errors){
-    el_errors = <div className='errors'>{errors}</div>;
   }
 
   const send_code = () => {
@@ -69,7 +65,7 @@ export default function RecoverPage() {
           />
         </div>
       </div>
-      {el_errors}
+      <FormErrors errors={errors} />
       <div className='submit'>
         <button type='submit'>Send Recovery Code</button>
       </div>
@@ -110,7 +106,7 @@ export default function RecoverPage() {
           />
         </div>
       </div>
-      {errors}
+      <FormErrors errors={errors} />
       <div className='submit'>
         <button type='submit'>Reset Password</button>
       </div>

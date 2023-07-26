@@ -48,11 +48,6 @@ export default function ActivityForm(props) {
     setTtl(event.target.value);
   }
 
-  let el_errors;
-  if (errors){
-    el_errors = <div className='errors'>{errors}</div>;
-  }
-
   if (props.popped === true) {
     return (
       <form
@@ -65,7 +60,6 @@ export default function ActivityForm(props) {
           value={message}
           onChange={textarea_onchange}
         />
-        {el_errors}
         <div className='submit'>
           <div className={classes.join(' ')}>{240-count}</div>
           <button type='submit'>Crud</button>

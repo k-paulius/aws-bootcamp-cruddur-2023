@@ -29,7 +29,7 @@ async function request(method,url,payload_data,options){
       options.success(data)
     } else {
       if (options.hasOwnProperty('setErrors')){
-        options.setErrors(data)
+        options.setErrors([data])
       }
       console.log(res,data)
     }

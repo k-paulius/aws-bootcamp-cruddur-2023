@@ -3,6 +3,7 @@ import React from "react";
 import { useParams } from 'react-router-dom';
 import {ReactComponent as Logo} from '../components/svg/logo.svg';
 import { Auth } from 'aws-amplify';
+import FormErrors from 'components/FormErrors';
 
 export default function ConfirmationPage() {
   const [email, setEmail] = React.useState('');
@@ -23,7 +24,6 @@ export default function ConfirmationPage() {
     setErrors([])
     try {
       await Auth.resendSignUp(email);
-      console.log('code resent successfully');
       setCodeSent(true)
     } catch (err) {
       // does not return a code
@@ -31,9 +31,11 @@ export default function ConfirmationPage() {
       // for this to be an okay match?
       console.log(err)
       if (err.message === 'Username cannot be empty'){
-        setErrors("You need to provide an email in order to send Resend Activiation Code")
+        setErrors(["You need to provide an email in order to resend an activation code."])
       } else if (err.message === "Username/client id combination not found."){
-        setErrors("Email is invalid or cannot be found.")
+        setErrors(["Email is invalid or cannot be found."])
+      } else {
+        setErrors([err.message])
       }
     }
   }
@@ -45,14 +47,9 @@ export default function ConfirmationPage() {
       await Auth.confirmSignUp(email, code);
       window.location.href = "/"
     } catch (error) {
-      setErrors(error.message)
+      setErrors([error.message])
     }
     return false
-  }
-
-  let el_errors;
-  if (errors){
-    el_errors = <div className='errors'>{errors}</div>;
   }
 
   let code_button;
@@ -97,7 +94,7 @@ export default function ConfirmationPage() {
               />
             </div>
           </div>
-          {el_errors}
+          <FormErrors errors={errors} />
           <div className='submit'>
             <button type='submit'>Confirm Email</button>
           </div>

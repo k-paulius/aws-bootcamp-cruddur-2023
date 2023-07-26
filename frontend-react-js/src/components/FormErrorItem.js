@@ -33,6 +33,7 @@ export default function FormErrorItem(props) {
 
     return (
       <div className="errorItem">
+      <div className="errorItem" key={props.err_code}></div>
         {render_error()}
       </div>
     )

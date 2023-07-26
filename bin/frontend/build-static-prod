@@ -7,10 +7,12 @@ cd $FRONTEND_PATH
 
 npm install
 
-REACT_APP_BACKEND_URL=$(aws ssm get-parameter --name "/cruddur/prod/backend/origin" --query 'Parameter.Value' --output text)
-REACT_APP_AWS_USER_POOLS_ID=$(aws ssm get-parameter --name "/cruddur/prod/aws/cognito/user-pool-id" --query 'Parameter.Value' --output text)
-REACT_APP_CLIENT_ID=$(aws ssm get-parameter --name "/cruddur/prod/aws/cognito/user-pool-client-id" --query 'Parameter.Value' --output text)
-REACT_APP_AWS_PROJECT_REGION=us-east-1
-REACT_APP_AWS_COGNITO_REGION=us-east-1
+export REACT_APP_BACKEND_URL=$(aws ssm get-parameter --name "/cruddur/prod/backend/origin" --query 'Parameter.Value' --output text)
+export REACT_APP_AWS_USER_POOLS_ID=$(aws ssm get-parameter --name "/cruddur/prod/aws/cognito/user-pool-id" --query 'Parameter.Value' --output text)
+export REACT_APP_CLIENT_ID=$(aws ssm get-parameter --name "/cruddur/prod/aws/cognito/user-pool-client-id" --query 'Parameter.Value' --output text)
+export REACT_APP_AWS_PROJECT_REGION=us-east-1
+export REACT_APP_AWS_COGNITO_REGION=us-east-1
+
+export NODE_ENV=production
 
 npm run build

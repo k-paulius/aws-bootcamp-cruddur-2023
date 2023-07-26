@@ -1,7 +1,7 @@
 import './ActivityContent.css';
 
 import { Link } from "react-router-dom";
-import { format_datetime, time_ago } from '../lib/DateTimeFormats';
+import { format_datetime, time_ago, time_future } from '../lib/DateTimeFormats';
 import {ReactComponent as BombIcon} from './svg/bomb.svg';
 
 export default function ActivityContent(props) {
@@ -25,7 +25,7 @@ export default function ActivityContent(props) {
           </div>{/* activity_identity */}
           <div className='activity_times'>
             <div className="created_at" title={format_datetime(props.activity.created_at)}>
-              <span className='ago'>{time_ago(props.activity.created_at)}</span>
+              <span className='ago'>{time_future(props.activity.expires_at)}</span>
             </div>
             {expires_at}
           </div>{/* activity_times */}

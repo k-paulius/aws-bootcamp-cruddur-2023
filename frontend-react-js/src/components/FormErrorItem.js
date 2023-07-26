@@ -2,7 +2,7 @@ export default function FormErrorItem(props) {
     const render_error = () => {
       switch (props.err_code)  {
         case 'generic_500':
-          return "An internal server error has occured"
+          return "An internal server error has occurred"
         case 'generic_403':
           return "You are not authorized to perform this action"
         case 'generic_401':
@@ -19,7 +19,7 @@ export default function FormErrorItem(props) {
         // Users
         case 'message_group_uuid_blank':
           return "The message group cannot be blank"
-        case 'user_reciever_handle_blank':
+        case 'user_receiver_handle_blank':
           return "You need to send a message to a valid user"
         // Profile
         case 'display_name_blank':

@@ -2,7 +2,7 @@ import {getAccessToken} from 'lib/CheckAuth';
 
 async function request(method,url,payload_data,options){
   if (options.hasOwnProperty('setErrors')){
-    options.setErrors('')
+    options.setErrors([])
   }
   let res
   try {

@@ -7,7 +7,7 @@ import { Auth } from 'aws-amplify';
 export default function ConfirmationPage() {
   const [email, setEmail] = React.useState('');
   const [code, setCode] = React.useState('');
-  const [errors, setErrors] = React.useState('');
+  const [errors, setErrors] = React.useState([]);
   const [codeSent, setCodeSent] = React.useState(false);
 
   const params = useParams();
@@ -20,7 +20,7 @@ export default function ConfirmationPage() {
   }
 
   const resend_code = async (event) => {
-    setErrors('')
+    setErrors([])
     try {
       await Auth.resendSignUp(email);
       console.log('code resent successfully');
@@ -40,7 +40,7 @@ export default function ConfirmationPage() {
 
   const onsubmit = async (event) => {
     event.preventDefault();
-    setErrors('')
+    setErrors([])
     try {
       await Auth.confirmSignUp(email, code);
       window.location.href = "/"

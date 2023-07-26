@@ -1,6 +1,12 @@
 export default function FormErrorItem(props) {
     const render_error = () => {
-      switch (props.err_code)  {
+      let err_code;
+      if (Array.isArray(props.err_code) && props.err_code.length > 0) {
+        err_code = props.err_code[0];
+      } else {
+        err_code = props.err_code;
+      }
+      switch (err_code)  {
         case 'generic_500':
           return "An internal server error has occurred"
         case 'generic_403':
@@ -27,7 +33,7 @@ export default function FormErrorItem(props) {
         default:
           // In the case for error return from cognito they
           // directly return the error so we just display it.
-          return props.err_code
+          return err_code
       }
     }
 

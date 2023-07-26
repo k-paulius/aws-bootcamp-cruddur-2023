@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+
+DIR_PATH=$(dirname $(readlink -f $0))
+FRONTEND_PATH="$DIR_PATH/../../frontend-react-js"
+
+cd $FRONTEND_PATH
+
+DOMAIN_NAME=$(aws ssm get-parameter --name "/cruddur/prod/domain-name" --query 'Parameter.Value' --output text)
+CF_DISTRO_ID=$(aws cloudformation describe-stacks \
+                   --stack-name "cruddur-prod-frontend" \
+                   --query "Stacks[0].Outputs[?ExportName=='cruddur-prod-frontend-CloudFrontDistributionId'].OutputValue" \
+                   --output text)
+
+aws s3 rm s3://$DOMAIN_NAME --recursive
+aws s3 sync build/ s3://$DOMAIN_NAME
+echo "Invalidating CloudFront distribution: ${CF_DISTRO_ID}"
+aws cloudfront create-invalidation \
+    --distribution-id $CF_DISTRO_ID \
+    --paths "/*"

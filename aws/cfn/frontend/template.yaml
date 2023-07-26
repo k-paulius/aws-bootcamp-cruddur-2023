@@ -176,3 +176,11 @@ Resources:
           AliasTarget:
             HostedZoneId: Z2FDTNDATAQYW2 # Magic CloudFront number
             DNSName: !GetAtt rDistribution.DomainName
+
+Outputs:
+
+  oDistributionId:
+    Description: 'CloudFront distribution ID'
+    Value: !Ref rDistribution
+    Export:
+      Name: !Sub '${AWS::StackName}-CloudFrontDistributionId'

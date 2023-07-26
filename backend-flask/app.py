@@ -1,8 +1,6 @@
 from flask import Flask
 from flask import request, g
-from flask_cors import cross_origin
-
-from aws_xray_sdk.core import xray_recorder
+import logging
 
 from lib.xray import init_xray
 from lib.rollbar import init_rollbar
@@ -15,6 +13,11 @@ import routes.general
 import routes.activities
 import routes.users
 import routes.messages
+
+LOGGER = logging.getLogger(__name__)
+LOGGER.setLevel(logging.DEBUG)
+console_handler = logging.StreamHandler()
+LOGGER.addHandler(console_handler)
 
 app = Flask(__name__)
 

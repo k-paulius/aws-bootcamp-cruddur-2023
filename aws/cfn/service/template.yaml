@@ -106,6 +106,9 @@ Resources:
               ContainerPort: !Ref pBackEndApplicationPort
               Protocol: tcp
               AppProtocol: http
+          Environment:
+            - Name: BACKEND_APP_ENV
+              Value: !Ref pAppEnvironment
           Secrets:
             - Name: FRONTEND_URL
               ValueFrom: !Sub 'arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${pAppId}/${pAppEnvironment}/frontend/origin'

@@ -5,8 +5,8 @@
   "networkMode": "awsvpc",
   "cpu": "256",
   "memory": "512",
-  "requiresCompatibilities": [ 
-    "FARGATE" 
+  "requiresCompatibilities": [
+    "FARGATE"
   ],
   "containerDefinitions": [
     {
@@ -40,7 +40,7 @@
         {
           "name": "backend-flask",
           "containerPort": 4567,
-          "protocol": "tcp", 
+          "protocol": "tcp",
           "appProtocol": "http"
         }
       ],
@@ -55,7 +55,8 @@
       "environment": [
         {"name": "OTEL_SERVICE_NAME",           "value": "backend-flask"},
         {"name": "OTEL_EXPORTER_OTLP_ENDPOINT", "value": "https://api.honeycomb.io"},
-        {"name": "AWS_DEFAULT_REGION",          "value": "us-east-1"}
+        {"name": "AWS_DEFAULT_REGION",          "value": "us-east-1"},
+        {"name": "BACKEND_APP_ENV",             "value": "staging"}
       ],
       "secrets": [
         {"name": "FRONTEND_URL",                    "valueFrom": "arn:aws:ssm:us-east-1:123456789012:parameter/cruddur/backend-flask/FRONTEND_URL"},

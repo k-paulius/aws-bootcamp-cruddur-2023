@@ -19,6 +19,7 @@ aws cloudformation deploy \
         pParentClusterStack=$CLUSTER_STACK_NAME_SSM_PARAM \
         pParentVPCStack=$NETWORKING_STACK_NAME_SSM_PARAM \
         pParentDBStack=$DB_STACK_NAME_SSM_PARAM \
+        pParentDDBStack=$DDB_STACK_NAME_SSM_PARAM \
         pDNSStackName=$DNS_STACK_NAME_SSM_PARAM \
         pServiceName=backend \
         pBackEndApplicationPort=$BACKEND_APP_PORT \

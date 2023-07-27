@@ -28,6 +28,10 @@ Parameters:
     Description: 'SSM Parameter that holds stack name of the parent DB stack'
     Type: AWS::SSM::Parameter::Value<String>
 
+  pParentDDBStack:
+    Description: 'SSM Parameter that holds stack name of the parent DDB stack'
+    Type: AWS::SSM::Parameter::Value<String>
+
   pDNSStackName:
     Description: 'SSM Parameter that holds stack name of the parent DNS stack'
     Type: AWS::SSM::Parameter::Value<String>
@@ -194,16 +198,29 @@ Resources:
       ManagedPolicyArns:
         - 'arn:aws:iam::aws:policy/AWSXRayDaemonWriteAccess'
       Policies:
-        - PolicyName: !Sub '${pAppId}-${pAppEnvironment}-${pServiceName}-task-policy'
+        - PolicyName: logs-access
           PolicyDocument:
             Version: '2012-10-17'
             Statement:
-              - Sid: PutCloudWatchLogEvents
-                Effect: Allow
-                Action:
-                  - logs:CreateLogStream
-                  - logs:PutLogEvents
-                Resource: !GetAtt rBackendLogGroup.Arn
+            - Effect: Allow
+              Action:
+                - 'logs:CreateLogStream'
+                - 'logs:PutLogEvents'
+              Resource: !GetAtt rBackendLogGroup.Arn
+        - PolicyName: dynamodb-access
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+            - Effect: Allow
+              Action:
+                - 'dynamodb:BatchWriteItem'
+                - 'dynamodb:Query'
+                - 'dynamodb:PutItem'
+              Resource: {'Fn::ImportValue': !Sub '${pParentDDBStack}-MessagesTableArn'}
+        - PolicyName: 'session-manager-access'
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
               - Sid: SessionManagerMessageGatewayService
                 Effect: Allow
                 Action:

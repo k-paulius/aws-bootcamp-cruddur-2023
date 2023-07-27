@@ -108,10 +108,10 @@ Resources:
             Statement:
             - Effect: Allow
               Action:
-              - 'logs:CreateLogStream'
-              - 'logs:PutLogEvents'
+                - 'logs:CreateLogStream'
+                - 'logs:PutLogEvents'
               Resource: !GetAtt 'rMessageStreamFunctionLogGroup.Arn'
-        - PolicyName: AWSLambdaInvocation-DynamoDB
+        - PolicyName: dynamodb-access
           PolicyDocument:
             Version: '2012-10-17'
             Statement:
@@ -121,4 +121,12 @@ Resources:
                   - dynamodb:GetRecords
                   - dynamodb:GetShardIterator
                   - dynamodb:ListStreams
-                Resource: '*'
+                Resource: !GetAtt rMessagesTable.Arn
+
+Outputs:
+
+  oMessagesTableArn:
+    Description: 'DynamoDB Table ARN'
+    Value: !GetAtt rMessagesTable.Arn
+    Export:
+      Name: !Sub '${AWS::StackName}-MessagesTableArn'

@@ -12,6 +12,10 @@ export REACT_APP_AWS_USER_POOLS_ID=$(aws ssm get-parameter --name "/cruddur/prod
 export REACT_APP_CLIENT_ID=$(aws ssm get-parameter --name "/cruddur/prod/aws/cognito/user-pool-client-id" --query 'Parameter.Value' --output text)
 export REACT_APP_AWS_PROJECT_REGION=us-east-1
 export REACT_APP_AWS_COGNITO_REGION=us-east-1
+export REACT_APP_API_GATEWAY_ENDPOINT_URL=$(aws cloudformation describe-stacks \
+                                                --stack-name "cruddur-prod-thumbing" \
+                                                --query "Stacks[0].Outputs[?ExportName=='cruddur-prod-thumbing-ApiEndpoint'].OutputValue" \
+                                                --output text)
 
 export NODE_ENV=production
 

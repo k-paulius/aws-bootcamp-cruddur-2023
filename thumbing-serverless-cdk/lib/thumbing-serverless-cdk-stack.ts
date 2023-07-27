@@ -3,8 +3,6 @@ import * as s3 from 'aws-cdk-lib/aws-s3';
 import * as lambda from 'aws-cdk-lib/aws-lambda';
 import * as s3n from 'aws-cdk-lib/aws-s3-notifications';
 import * as iam from 'aws-cdk-lib/aws-iam';
-import * as sns from 'aws-cdk-lib/aws-sns';
-import * as subscriptions from 'aws-cdk-lib/aws-sns-subscriptions';
 import { Construct } from 'constructs';
 import * as dotenv from 'dotenv';
 import * as dotenvExpand from 'dotenv-expand';
@@ -20,8 +18,6 @@ export class ThumbingServerlessCdkStack extends cdk.Stack {
     const uploadsBucketName: string = process.env.THUMBING_UPLOADS_BUCKET_NAME as string;
     const functionPath: string = process.env.THUMBING_FUNCTION_PATH as string;
     const folderOutput: string = process.env.THUMBING_S3_FOLDER_OUTPUT as string;
-    const webhookUrl: string = process.env.THUMBING_WEBHOOK_URL as string;
-    const topicName: string = process.env.THUMBING_TOPIC_NAME as string;
 
     // create a new uploads bucket and import existing assets bucket
     const uploadsBucket = this.createBucket(uploadsBucketName);
@@ -38,13 +34,6 @@ export class ThumbingServerlessCdkStack extends cdk.Stack {
     const s3AssetsReadWritePolicy = this.createPolicyBucketAccess(assetsBucket.bucketArn)
     lambda.addToRolePolicy(s3UploadsReadWritePolicy);
     lambda.addToRolePolicy(s3AssetsReadWritePolicy);
-
-    // create topic and subscription
-    const snsTopic = this.createSnsTopic(topicName);
-    this.createSnsSubscription(snsTopic, webhookUrl);
-
-    // add S3 event notification to assets bucket; triggers SNS
-    this.createS3NotifyToSns(folderOutput, snsTopic, assetsBucket);
   }
 
   createBucket(bucketName: string): s3.IBucket {
@@ -94,28 +83,5 @@ export class ThumbingServerlessCdkStack extends cdk.Stack {
       ]
     });
     return s3ReadWritePolicy;
-  }
-
-  createSnsTopic(topicName: string): sns.ITopic {
-    const snsTopic = new sns.Topic(this, 'ThumbingTopic', {
-      topicName: topicName
-    });
-    return snsTopic;
-  }
-
-  createSnsSubscription(snsTopic: sns.ITopic, webhookUrl: string): sns.Subscription {
-    const snsSubscription = snsTopic.addSubscription(
-      new subscriptions.UrlSubscription(webhookUrl)
-    );
-    return snsSubscription;
-  }
-
-  createS3NotifyToSns(prefix: string, snsTopic: sns.ITopic, bucket: s3.IBucket): void {
-    const destination = new s3n.SnsDestination(snsTopic);
-    bucket.addEventNotification(
-      s3.EventType.OBJECT_CREATED_PUT, 
-      destination,
-      {prefix: prefix}
-    );
   }
 }

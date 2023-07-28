@@ -3,7 +3,7 @@ import EditProfileButton from '../components/EditProfileButton';
 import ProfileAvatar from 'components/ProfileAvatar'
 
 export default function ProfileHeading(props) {
-  const backgroundImage = 'url("https://d2vvi42ujybspu.cloudfront.net/banners/banner.jpg")';
+  const backgroundImage = `url("https://${process.env.REACT_APP_ASSETS_DOMAIN_NAME}/banners/default.jpg")`;
   const styles = {
     backgroundImage: backgroundImage,
     backgroundSize: 'cover',

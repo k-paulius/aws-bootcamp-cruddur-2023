@@ -5,6 +5,7 @@ APP_DIR="$DIR_PATH/../../../frontend-react-js"
 
 docker build \
   --build-arg REACT_APP_BACKEND_URL=$(aws ssm get-parameter --name "/cruddur/frontend-react-js/REACT_APP_BACKEND_URL" --query 'Parameter.Value' --output text) \
+  --build-arg REACT_APP_ASSETS_DOMAIN_NAME=$(aws ssm get-parameter --name "/cruddur/prod/thumbing/assets-domain-name" --query 'Parameter.Value' --output text) \
   --build-arg REACT_APP_AWS_USER_POOLS_ID=$(aws ssm get-parameter --name "/cruddur/frontend-react-js/REACT_APP_AWS_USER_POOLS_ID" --query 'Parameter.Value' --output text) \
   --build-arg REACT_APP_CLIENT_ID=$(aws ssm get-parameter --name "/cruddur/frontend-react-js/REACT_APP_CLIENT_ID" --query 'Parameter.Value' --output text) \
   --build-arg REACT_APP_AWS_PROJECT_REGION=$AWS_DEFAULT_REGION \

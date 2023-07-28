@@ -1,7 +1,7 @@
 import './ProfileAvatar.css';
 
 export default function ProfileAvatar(props) {
-  const backgroundImage = `url("https://d2vvi42ujybspu.cloudfront.net/avatars/processed/${props.id}.jpg")`;
+  const backgroundImage = `url("https://${process.env.REACT_APP_ASSETS_DOMAIN_NAME}/avatars/${props.id}.jpg")`;
   const styles = {
     backgroundImage: backgroundImage,
     backgroundSize: 'cover',
@@ -9,7 +9,7 @@ export default function ProfileAvatar(props) {
   };
 
   return (
-    <div 
+    <div
       className="profile-avatar"
       style={styles}
     ></div>

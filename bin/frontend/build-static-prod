@@ -8,6 +8,7 @@ cd $FRONTEND_PATH
 npm install
 
 export REACT_APP_BACKEND_URL=$(aws ssm get-parameter --name "/cruddur/prod/backend/origin" --query 'Parameter.Value' --output text)
+export REACT_APP_ASSETS_DOMAIN_NAME=$(aws ssm get-parameter --name "/cruddur/prod/thumbing/assets-domain-name" --query 'Parameter.Value' --output text)
 export REACT_APP_AWS_USER_POOLS_ID=$(aws ssm get-parameter --name "/cruddur/prod/aws/cognito/user-pool-id" --query 'Parameter.Value' --output text)
 export REACT_APP_CLIENT_ID=$(aws ssm get-parameter --name "/cruddur/prod/aws/cognito/user-pool-client-id" --query 'Parameter.Value' --output text)
 export REACT_APP_AWS_PROJECT_REGION=us-east-1

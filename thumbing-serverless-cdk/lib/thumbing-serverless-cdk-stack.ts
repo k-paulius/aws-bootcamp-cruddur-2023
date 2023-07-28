@@ -3,6 +3,11 @@ import * as s3 from 'aws-cdk-lib/aws-s3';
 import * as lambda from 'aws-cdk-lib/aws-lambda';
 import * as s3n from 'aws-cdk-lib/aws-s3-notifications';
 import * as iam from 'aws-cdk-lib/aws-iam';
+import * as cloudfront from 'aws-cdk-lib/aws-cloudfront';
+import * as origins from 'aws-cdk-lib/aws-cloudfront-origins';
+import * as certificatemanager from 'aws-cdk-lib/aws-certificatemanager';
+import * as route53 from 'aws-cdk-lib/aws-route53';
+import * as targets from 'aws-cdk-lib/aws-route53-targets';
 import { aws_apigatewayv2 as apigwv2 } from 'aws-cdk-lib';
 import { Construct } from 'constructs';
 import * as dotenv from 'dotenv';
@@ -52,6 +57,10 @@ export class ThumbingServerlessCdkStack extends cdk.Stack {
     this.createAvatarsKeyUploadRoute(cfnApi, cfnAuthorizer, avatarPresignedS3URLIntegration, AvatarsKeyUploadRouteMethod, AvatarsKeyUploadRoutePath);
     this.createLambdaResourcePolicy(avatarPresignedS3URLFn, cfnApi, AvatarsKeyUploadRouteMethod, AvatarsKeyUploadRoutePath);
     this.createDefaultAPIStage(cfnApi);
+
+    // CloudFront
+    const distro = this.createAssetCloudFrontDistro(appId, appEnv, assetsBucket);
+    this.createCloudFrontDNSRecords(appId, appEnv, assetsBucketName, distro);
 
     // exports
     new cdk.CfnOutput(this, "oApiEndpoint", {
@@ -148,7 +157,7 @@ export class ThumbingServerlessCdkStack extends cdk.Stack {
     return fn
   }
 
-  createLambdaResourcePolicy(fn: lambda.IFunction, cfnApi: apigwv2.CfnApi, routeMethod: string, routePath: string) {
+  createLambdaResourcePolicy(fn: lambda.IFunction, cfnApi: apigwv2.CfnApi, routeMethod: string, routePath: string): void {
     // Allow API Gateway to invoke the Lambda function
     fn.addPermission('APIServiceInvocation', {
       action: 'lambda:InvokeFunction',
@@ -204,7 +213,7 @@ export class ThumbingServerlessCdkStack extends cdk.Stack {
     return cfnIntegration;
   }
 
-  createAvatarsKeyUploadRoute(cfnApi: apigwv2.CfnApi, cfnAuthorizer: apigwv2.CfnAuthorizer, integration: apigwv2.CfnIntegration, routeMethod: string, routePath: string) {
+  createAvatarsKeyUploadRoute(cfnApi: apigwv2.CfnApi, cfnAuthorizer: apigwv2.CfnAuthorizer, integration: apigwv2.CfnIntegration, routeMethod: string, routePath: string): apigwv2.CfnRoute {
     const cfnRoute = new apigwv2.CfnRoute(this, 'AvatarsKeyUploadRout', {
       routeKey: `${routeMethod} ${routePath}`,
       apiId: cfnApi.attrApiId,
@@ -229,5 +238,52 @@ export class ThumbingServerlessCdkStack extends cdk.Stack {
       stageVariables: {}
     });
     return cfnStage;
+  }
+
+  createAssetCloudFrontDistro(appId: string, appEnv: string, bucket: s3.IBucket): cloudfront.IDistribution {
+    const distro = new cloudfront.Distribution(this, 'AssetDistribution', {
+      comment: `${appId}-${appEnv} Assets`,
+      enabled: true,
+      defaultBehavior: {
+        origin: new origins.S3Origin(bucket, {
+          originAccessIdentity: new cloudfront.OriginAccessIdentity(this, 'S3AssetBucketOrigin')
+        }),
+        allowedMethods: cloudfront.AllowedMethods.ALLOW_GET_HEAD_OPTIONS,
+        cachedMethods: cloudfront.CachedMethods.CACHE_GET_HEAD_OPTIONS,
+        cachePolicy: cloudfront.CachePolicy.CACHING_OPTIMIZED,
+        compress: true,
+        originRequestPolicy: cloudfront.OriginRequestPolicy.ALL_VIEWER_EXCEPT_HOST_HEADER,
+        responseHeadersPolicy: cloudfront.ResponseHeadersPolicy.SECURITY_HEADERS,
+        viewerProtocolPolicy: cloudfront.ViewerProtocolPolicy.REDIRECT_TO_HTTPS
+      },
+      certificate: certificatemanager.Certificate.fromCertificateArn(
+        this, 'domainCert', cdk.Fn.importValue(`${appId}-${appEnv}-dns-CertificateArn`)
+      ),
+      domainNames: [bucket.bucketName],
+      enableIpv6: true,
+      httpVersion: cloudfront.HttpVersion.HTTP2_AND_3,
+      minimumProtocolVersion: cloudfront.SecurityPolicyProtocol.TLS_V1_2_2021,
+      priceClass: cloudfront.PriceClass.PRICE_CLASS_100,
+      sslSupportMethod: cloudfront.SSLMethod.SNI
+    });
+    return distro;
+  }
+
+  createCloudFrontDNSRecords(appId: string, appEnv: string, recordName: string, distro: cloudfront.IDistribution) {
+    const hostedZone = route53.HostedZone.fromHostedZoneAttributes(this, 'HostedZone', {
+      hostedZoneId: cdk.Fn.importValue(`${appId}-${appEnv}-dns-HostedZoneId`),
+      zoneName: cdk.Fn.importValue(`${appId}-${appEnv}-dns-HostedZoneName`)
+    });
+
+    new route53.ARecord(this, 'AssetDomainARecord', {
+      zone: hostedZone,
+      recordName: 'assets',
+      target: route53.RecordTarget.fromAlias(new targets.CloudFrontTarget(distro))
+    });
+    new route53.AaaaRecord (this, 'AssetDomainAAAARecord', {
+      zone: hostedZone,
+      recordName: 'assets',
+      target: route53.RecordTarget.fromAlias(new targets.CloudFrontTarget(distro))
+    });
   }
 }

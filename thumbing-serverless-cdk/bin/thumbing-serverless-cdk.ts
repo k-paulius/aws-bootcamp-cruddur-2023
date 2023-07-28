@@ -5,6 +5,7 @@ import { ThumbingServerlessCdkStack } from '../lib/thumbing-serverless-cdk-stack
 
 const app = new cdk.App();
 new ThumbingServerlessCdkStack(app, 'ThumbingServerlessCdkStack', {
+  stackName: `${process.env.APP_ID}-${process.env.APP_ENV}-thumbing`
   /* If you don't specify 'env', this stack will be environment-agnostic.
    * Account/Region-dependent features and context lookups will not work,
    * but a single synthesized template can be deployed anywhere. */

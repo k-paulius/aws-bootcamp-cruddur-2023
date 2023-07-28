@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+set -e
+
+source config.sh
+CDK_PROJECT_PATH="$DIR_PATH/../../thumbing-serverless-cdk"
+
+export THUMBING_UPLOADS_BUCKET_NAME=$(aws ssm get-parameter --name /${APP_ID}/${APP_ENV}/thumbing/uploads-bucket-name --query 'Parameter.Value' --output text)
+export THUMBING_ASSETS_BUCKET_NAME=$(aws ssm get-parameter --name /${APP_ID}/${APP_ENV}/thumbing/assets-domain-name --query 'Parameter.Value' --output text)
+export FRONTEND_ORIGIN=$(aws ssm get-parameter --name /${APP_ID}/${APP_ENV}/frontend/origin --query 'Parameter.Value' --output text)
+
+cd $CDK_PROJECT_PATH
+
+cdk synth
